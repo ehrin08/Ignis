@@ -216,6 +216,10 @@ The palette maps one warm-paper and graphite system across light and dark themes
 
 **The Instrument Type Rule.** Use Doto only for money, scheduled-time readouts, and the short IGNIS wordmark; body copy, fields, buttons, and navigation stay sans-serif.
 
+### Brand Mark
+
+Ignis uses an **ember ledger clerk** mascot: a focused signal-red ember carrying a graphite attendance ledger. The approved source artwork lives at `assets/images/mascot-icon.png`; platform exports are regenerated with `scripts/generate-brand-assets.py`. The mascot sits on Warm Field in launcher and web contexts, while Android's monochrome export preserves its compact silhouette for themed icons. It appears on the launcher, splash screen, onboarding, and Today header; it does not replace operational status icons.
+
 **The Scaling Rule.** Display text supports Android font scaling to 1.35× and all other text to 1.6×; paired totals and trailing pay use fit or line limits rather than clipping.
 
 ## Layout

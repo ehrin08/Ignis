@@ -4,7 +4,7 @@ import { listDuties, saveSchedule, saveSettings, updateAttendance } from '@/src/
 import { settings } from '@/test-utils/fixtures';
 
 describe('schedule repository contract', () => {
-  test('version 2 migration creates schedule tables and preserves legacy shifts', async () => {
+  test('latest migration creates schedule tables, premium settings, and preserves legacy shifts', async () => {
     const statements: string[] = [];
     const runs: unknown[][] = [];
     type DbDouble = {
@@ -12,6 +12,7 @@ describe('schedule repository contract', () => {
       getFirstAsync: (sql: string) => Promise<unknown>;
       getAllAsync: (sql: string) => Promise<unknown[]>;
       runAsync: (...args: unknown[]) => Promise<void>;
+      withTransactionAsync: (callback: () => Promise<void>) => Promise<void>;
       withExclusiveTransactionAsync: (callback: (transaction: DbDouble) => Promise<void>) => Promise<void>;
     };
     let db: DbDouble;
@@ -23,6 +24,7 @@ describe('schedule repository contract', () => {
         note: 'Legacy', created_at: 90, updated_at: 210,
       }]),
       runAsync: jest.fn(async (...args: unknown[]) => { runs.push(args); }),
+      withTransactionAsync: jest.fn(async (callback) => callback()),
       withExclusiveTransactionAsync: jest.fn(async (callback) => callback(db)),
     };
     await migrateDatabase(db as never);
@@ -30,7 +32,11 @@ describe('schedule repository contract', () => {
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS schedule_series');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS scheduled_duties');
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS schedule_exceptions');
-    expect(sql).toContain('PRAGMA user_version = 2');
+    expect(sql).toContain('PRAGMA user_version = 3');
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS sync_tombstones');
+    expect(sql).toContain('PRAGMA user_version = 4');
+    expect(sql).toContain('night_differential_bps');
+    expect(sql).toContain('hourly_rate_override_minor');
     expect(runs.some((call) => call.includes('legacy-old-1'))).toBe(true);
     expect(runs.some((call) => call.includes('completed'))).toBe(true);
   });
@@ -39,13 +45,13 @@ describe('schedule repository contract', () => {
     const db = {
       getAllAsync: jest.fn(async () => [{
         id: 'duty-1', series_id: 'series-1', occurrence_date: '2026-08-24', scheduled_start: 100,
-        scheduled_end: 200, timezone: 'UTC', break_seconds: 20, status: 'completed', needs_review: 0,
+        scheduled_end: 200, timezone: 'UTC', break_seconds: 20, hourly_rate_override_minor: 2500, status: 'completed', needs_review: 0,
         note: 'Training', created_at: 90, updated_at: 210,
       }]),
     };
     await expect(listDuties(db as never)).resolves.toEqual([{
       id: 'duty-1', seriesId: 'series-1', occurrenceDate: '2026-08-24', scheduledStart: 100,
-      scheduledEnd: 200, timezone: 'UTC', breakSeconds: 20, status: 'completed', needsReview: false,
+      scheduledEnd: 200, timezone: 'UTC', breakSeconds: 20, hourlyRateOverrideMinor: 2500, status: 'completed', needsReview: false,
       note: 'Training', createdAt: 90, updatedAt: 210,
     }]);
   });
@@ -64,11 +70,37 @@ describe('schedule repository contract', () => {
   });
 
   test('persists the complete pay profile without planned-week fields', async () => {
-    const runAsync = jest.fn<Promise<undefined>, [string, ...unknown[]]>(async () => undefined);
-    await saveSettings({ runAsync } as never, settings);
+    const profile = {
+      ...settings,
+      payCycleType: 'semimonthly' as const,
+      overtimeMode: 'daily' as const,
+      overtimeThresholdMinutes: 8 * 60,
+      overtimeMultiplierBps: 13_000,
+      nightDifferentialBps: 1_000,
+      nightDifferentialStartMinutes: 22 * 60,
+      nightDifferentialEndMinutes: 6 * 60,
+    };
+    const runAsync = jest.fn<Promise<undefined>, [string, ...unknown[]]>(async (sql, ...parameters) => {
+      expect(sql.match(/\?/g) ?? []).toHaveLength(parameters.length);
+    });
+    await saveSettings({ runAsync } as never, profile);
     expect(runAsync).toHaveBeenCalledTimes(1);
     expect(runAsync.mock.calls[0][0]).toContain('ON CONFLICT(id) DO UPDATE');
-    expect(runAsync.mock.calls[0]).toContain(settings.currencyCode);
+    expect(runAsync.mock.calls[0].slice(1)).toEqual([
+      1,
+      profile.currencyCode,
+      profile.hourlyRateMinor,
+      profile.payCycleType,
+      profile.payCycleAnchor,
+      profile.overtimeMode,
+      profile.overtimeThresholdMinutes,
+      profile.overtimeMultiplierBps,
+      profile.nightDifferentialBps,
+      profile.nightDifferentialStartMinutes,
+      profile.nightDifferentialEndMinutes,
+      profile.weekStartsOn,
+      expect.any(Number),
+    ]);
     expect(runAsync.mock.calls[0][0]).not.toContain('workday_mask');
   });
 
@@ -88,6 +120,7 @@ describe('schedule repository contract', () => {
       getFirstAsync: (sql: string) => Promise<unknown>;
       getAllAsync: (sql: string) => Promise<unknown[]>;
       runAsync: (...args: unknown[]) => Promise<void>;
+      withTransactionAsync: (callback: () => Promise<void>) => Promise<void>;
       withExclusiveTransactionAsync: (callback: (transaction: DbDouble) => Promise<void>) => Promise<void>;
     };
     let db: DbDouble;
@@ -95,13 +128,14 @@ describe('schedule repository contract', () => {
       getFirstAsync: jest.fn(async (sql: string) => sql.includes('FROM scheduled_duties WHERE id') ? dutyRow : sql.includes('FROM schedule_series') ? seriesRow : null),
       getAllAsync: jest.fn(async (sql: string) => sql.includes("status != 'pending'") ? [{ occurrence_date: '2026-08-26' }] : [{ occurrence_date: '2026-08-26' }]),
       runAsync: jest.fn(async (...args: unknown[]) => { calls.push(args); }),
+      withTransactionAsync: jest.fn(async (callback) => callback()),
       withExclusiveTransactionAsync: jest.fn(async (callback) => callback(db)),
     };
 
     await saveSchedule(db as never, {
       dutyId: 'duty-1', seriesId: 'series-old', scope: 'future', recurrence: 'once',
       startDate: '2026-08-24', endDate: null, weekdayMask: [], startMinutes: 600, endMinutes: 1080,
-      timezone: 'UTC', breakSeconds: 0, note: 'Changed',
+      timezone: 'UTC', breakSeconds: 0, hourlyRateOverrideMinor: null, note: 'Changed',
     });
 
     expect(calls.some((call) => String(call[0]).includes('schedule_exceptions') && call.includes('2026-08-26'))).toBe(true);

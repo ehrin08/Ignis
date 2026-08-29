@@ -9,6 +9,9 @@ export const settings: AppSettings = {
   overtimeMode: 'none',
   overtimeThresholdMinutes: 480,
   overtimeMultiplierBps: 15_000,
+  nightDifferentialBps: 1_000,
+  nightDifferentialStartMinutes: 22 * 60,
+  nightDifferentialEndMinutes: 6 * 60,
   weekStartsOn: 1,
 };
 
@@ -25,6 +28,7 @@ export function duty(start: string, end: string | null, overrides: Partial<Sched
     scheduledEnd,
     timezone: 'Asia/Manila',
     breakSeconds: 0,
+    hourlyRateOverrideMinor: null,
     status: 'pending',
     needsReview: false,
     note: '',
@@ -44,6 +48,7 @@ export const weeklySeries: ScheduleSeries = {
   endMinutes: 17 * 60,
   timezone: 'Asia/Manila',
   breakSeconds: 0,
+  hourlyRateOverrideMinor: null,
   note: '',
   generatedThrough: null,
   createdAt: 1,

@@ -1,6 +1,7 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 
 import { localDateKey } from '@/src/domain/format';
+import { runWriteTransaction } from '@/src/data/transactions';
 
 export async function migrateDatabase(db: SQLiteDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL;');
@@ -9,7 +10,7 @@ export async function migrateDatabase(db: SQLiteDatabase) {
   const version = row?.user_version ?? 0;
 
   if (version < 1) {
-    await db.withExclusiveTransactionAsync(async (transaction) => {
+    await runWriteTransaction(db, async (transaction) => {
       await transaction.execAsync(`
         CREATE TABLE IF NOT EXISTS settings (
           id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -51,7 +52,7 @@ export async function migrateDatabase(db: SQLiteDatabase) {
   }
 
   if (version < 2) {
-    await db.withExclusiveTransactionAsync(async (transaction) => {
+    await runWriteTransaction(db, async (transaction) => {
       await transaction.execAsync(`
         CREATE TABLE IF NOT EXISTS schedule_series (
           id TEXT PRIMARY KEY NOT NULL,
@@ -129,6 +130,38 @@ export async function migrateDatabase(db: SQLiteDatabase) {
         );
       }
       await transaction.execAsync('PRAGMA user_version = 2;');
+    });
+  }
+
+  if (version < 3) {
+    await runWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        ALTER TABLE settings ADD COLUMN night_differential_bps INTEGER NOT NULL DEFAULT 1000 CHECK (night_differential_bps BETWEEN 0 AND 10000);
+        ALTER TABLE settings ADD COLUMN night_differential_start_minutes INTEGER NOT NULL DEFAULT 1320 CHECK (night_differential_start_minutes BETWEEN 0 AND 1439);
+        ALTER TABLE settings ADD COLUMN night_differential_end_minutes INTEGER NOT NULL DEFAULT 360 CHECK (night_differential_end_minutes BETWEEN 0 AND 1439);
+        ALTER TABLE schedule_series ADD COLUMN hourly_rate_override_minor INTEGER CHECK (hourly_rate_override_minor >= 0);
+        ALTER TABLE scheduled_duties ADD COLUMN hourly_rate_override_minor INTEGER CHECK (hourly_rate_override_minor >= 0);
+        PRAGMA user_version = 3;
+      `);
+    });
+  }
+
+  if (version < 4) {
+    await runWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        CREATE TABLE IF NOT EXISTS sync_state (
+          key TEXT PRIMARY KEY NOT NULL,
+          value TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS sync_tombstones (
+          entity_type TEXT NOT NULL CHECK (entity_type IN ('series', 'duty', 'exception')),
+          entity_id TEXT NOT NULL,
+          deleted_at INTEGER NOT NULL,
+          device_id TEXT NOT NULL,
+          PRIMARY KEY (entity_type, entity_id)
+        );
+        PRAGMA user_version = 4;
+      `);
     });
   }
 }

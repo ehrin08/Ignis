@@ -13,6 +13,7 @@ const base: ScheduleInput = {
   endMinutes: 17 * 60,
   timezone: 'Asia/Manila',
   breakSeconds: 0,
+  hourlyRateOverrideMinor: null,
   note: '',
 };
 

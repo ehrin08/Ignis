@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { BrandMark } from '@/src/components/brand-mark';
 import { ActionButton, AppText, Screen } from '@/src/components/primitives';
 import { SettingsEditor, validateSettings } from '@/src/components/settings-editor';
 import { useAppData } from '@/src/providers/app-provider';
@@ -31,7 +32,7 @@ export default function OnboardingScreen() {
   return (
     <Screen scroll>
       <View style={styles.hero}>
-        <View style={[styles.mark, { borderColor: theme.colors.ink }]}><View style={[styles.markCore, { backgroundColor: theme.colors.accent }]} /></View>
+        <BrandMark size={56} />
         <AppText variant="displayStrong" style={styles.brand}>IGNIS</AppText>
         <AppText variant="title">Set the rules once. See every estimate clearly.</AppText>
         <AppText variant="muted">Ignis keeps your schedules and attendance on this device and estimates gross pay before taxes or deductions.</AppText>
@@ -45,8 +46,6 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   hero: { paddingTop: 34, gap: 12 },
-  mark: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  markCore: { width: 14, height: 14, borderRadius: 7 },
   brand: { fontSize: 44 },
   finish: { marginTop: 32 },
 });

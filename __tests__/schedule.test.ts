@@ -24,6 +24,7 @@ describe('schedule recurrence', () => {
     const input: ScheduleInput = {
       scope: 'occurrence', recurrence: 'daily', startDate: '2026-03-07', endDate: '2026-03-10',
       weekdayMask: [], startMinutes: 9 * 60, endMinutes: 17 * 60, timezone: 'America/New_York', breakSeconds: 0, note: '',
+      hourlyRateOverrideMinor: null,
     };
     const duties = generateOccurrences(seriesFromInput(input, 'dst'), '2026-03-07', '2026-03-11');
     expect(duties).toHaveLength(4);

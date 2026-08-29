@@ -12,6 +12,7 @@ import { ReactNode, useMemo } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { DutyRow } from '@/src/components/duty-row';
+import { BrandMark } from '@/src/components/brand-mark';
 import { AppText, IconButton, Screen } from '@/src/components/primitives';
 import { formatCurrency, formatPeriodRange, localDateKey } from '@/src/domain/format';
 import { allocateDutyGross, calculateDashboardSummary } from '@/src/domain/pay';
@@ -72,9 +73,12 @@ export default function TodayScreen() {
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
     <Screen scroll contentStyle={styles.screen}>
       <View style={styles.topBar}>
-        <View>
+        <View style={styles.brandLockup}>
+          <BrandMark size={34} />
+          <View>
           <AppText variant="displayStrong" style={styles.brand}>IGNIS</AppText>
           <AppText variant="muted">{formatPeriodRange(period.start, period.end)}</AppText>
+          </View>
         </View>
       </View>
 
@@ -217,6 +221,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   screen: { gap: spacing.xl, paddingTop: spacing.md },
   topBar: { minHeight: 64, flexDirection: 'row', alignItems: 'center' },
+  brandLockup: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   brand: { fontSize: 34, lineHeight: 38 },
   error: { minHeight: 52, borderWidth: 1, borderRadius: radii.md, paddingLeft: spacing.md, flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   moneyRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },

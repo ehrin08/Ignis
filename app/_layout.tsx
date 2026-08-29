@@ -6,8 +6,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { Component, PropsWithChildren, ReactNode, Suspense, useEffect, useState } from 'react';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { ActionButton, AppText } from '@/src/components/primitives';
@@ -16,6 +16,36 @@ import { AppDataProvider } from '@/src/providers/app-provider';
 import { useIgnisTheme } from '@/src/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
+
+type DatabaseErrorBoundaryProps = PropsWithChildren<{
+  renderError: (error: Error) => ReactNode;
+}>;
+
+class DatabaseErrorBoundary extends Component<DatabaseErrorBoundaryProps, { error: Error | null }> {
+  state = { error: null };
+
+  static getDerivedStateFromError(cause: unknown) {
+    return {
+      error: cause instanceof Error ? cause : new Error('Ignis could not open its local database.'),
+    };
+  }
+
+  render() {
+    return this.state.error ? this.props.renderError(this.state.error) : this.props.children;
+  }
+}
+
+function DatabaseErrorScreen({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const ignisTheme = useIgnisTheme();
+  return (
+    <View style={[styles.databaseError, { backgroundColor: ignisTheme.colors.background }]}>
+      <AppText variant="title">The schedule did not open</AppText>
+      <AppText variant="muted" style={styles.databaseErrorCopy}>{error.message}</AppText>
+      <ActionButton label="Try database again" onPress={onRetry} />
+      <StatusBar style="auto" />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -30,41 +60,57 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) return null;
 
+  const app = (
+    <AppDataProvider>
+      <ThemeProvider value={{
+        ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+        colors: {
+          ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+          primary: ignisTheme.colors.accent,
+          background: ignisTheme.colors.background,
+          card: ignisTheme.colors.background,
+          text: ignisTheme.colors.ink,
+          border: ignisTheme.colors.outline,
+          notification: ignisTheme.colors.accent,
+        },
+      }}>
+        <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="schedule/[id]" options={{ title: 'Schedule entry', presentation: 'card' }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </AppDataProvider>
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <DatabaseErrorBoundary renderError={(error) => (
+        <DatabaseErrorScreen error={error} onRetry={() => window.location.reload()} />
+      )}>
+        <Suspense fallback={null}>
+          <SQLiteProvider databaseName="ignis.db" onInit={migrateDatabase} useSuspense>
+            {app}
+          </SQLiteProvider>
+        </Suspense>
+      </DatabaseErrorBoundary>
+    );
+  }
+
   if (databaseError) {
     return (
-      <View style={[styles.databaseError, { backgroundColor: ignisTheme.colors.background }]}>
-        <AppText variant="title">The schedule did not open</AppText>
-        <AppText variant="muted" style={styles.databaseErrorCopy}>{databaseError.message}</AppText>
-        <ActionButton label="Try database again" onPress={() => { setDatabaseError(null); setDatabaseKey((value) => value + 1); }} />
-        <StatusBar style="auto" />
-      </View>
+      <DatabaseErrorScreen
+        error={databaseError}
+        onRetry={() => { setDatabaseError(null); setDatabaseKey((value) => value + 1); }}
+      />
     );
   }
 
   return (
     <SQLiteProvider databaseName="ignis.db" key={databaseKey} onError={setDatabaseError} onInit={migrateDatabase}>
-      <AppDataProvider>
-        <ThemeProvider value={{
-          ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
-          colors: {
-            ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
-            primary: ignisTheme.colors.accent,
-            background: ignisTheme.colors.background,
-            card: ignisTheme.colors.background,
-            text: ignisTheme.colors.ink,
-            border: ignisTheme.colors.outline,
-            notification: ignisTheme.colors.accent,
-          },
-        }}>
-          <Stack screenOptions={{ headerBackTitle: 'Back' }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="schedule/[id]" options={{ title: 'Schedule entry', presentation: 'card' }} />
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </AppDataProvider>
+      {app}
     </SQLiteProvider>
   );
 }

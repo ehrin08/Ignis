@@ -33,6 +33,27 @@ describe('scheduled duty pay calculation', () => {
     expect(result.grossMinor).toBe(95_000);
   });
 
+  test('adds night differential to payable night time after an unpaid break', () => {
+    const entry = duty('2026-08-24T21:00:00+08:00', '2026-08-25T06:00:00+08:00', { breakSeconds: 30 * 60, status: 'completed' });
+    const result = calculatePay([entry], { ...settings, overtimeMode: 'none' });
+    expect(result.paidSeconds).toBe(8.5 * 3600);
+    expect(result.grossMinor).toBe(18_500);
+  });
+
+  test('adds overtime and night premiums when their time overlaps', () => {
+    const entry = duty('2026-08-24T22:00:00+08:00', '2026-08-25T06:00:00+08:00', { status: 'completed' });
+    const result = calculatePay([entry], { ...settings, overtimeMode: 'daily', overtimeThresholdMinutes: 4 * 60 });
+    expect(result.regularSeconds).toBe(4 * 3600);
+    expect(result.overtimeSeconds).toBe(4 * 3600);
+    expect(result.grossMinor).toBe(21_600);
+  });
+
+  test('uses a duty hourly-rate override without changing the default rate', () => {
+    const entry = duty('2026-08-24T09:00:00+08:00', '2026-08-24T17:00:00+08:00', { hourlyRateOverrideMinor: 3_000, status: 'completed' });
+    expect(calculatePay([entry], { ...settings, nightDifferentialBps: 0 }).grossMinor).toBe(24_000);
+    expect(settings.hourlyRateMinor).toBe(2_000);
+  });
+
   test('completed earns, future pending projects, AWOL and overdue pending pay zero', () => {
     const now = new Date('2026-08-26T12:00:00+08:00');
     const period = getPayPeriod(now, settings);

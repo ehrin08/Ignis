@@ -13,6 +13,9 @@ export type AppSettings = {
   overtimeMode: OvertimeMode;
   overtimeThresholdMinutes: number;
   overtimeMultiplierBps: number;
+  nightDifferentialBps: number;
+  nightDifferentialStartMinutes: number;
+  nightDifferentialEndMinutes: number;
   weekStartsOn: number;
 };
 
@@ -26,6 +29,7 @@ export type ScheduleSeries = {
   endMinutes: number;
   timezone: string;
   breakSeconds: number;
+  hourlyRateOverrideMinor: number | null;
   note: string;
   generatedThrough: string | null;
   createdAt: number;
@@ -40,6 +44,7 @@ export type ScheduledDuty = {
   scheduledEnd: number | null;
   timezone: string;
   breakSeconds: number;
+  hourlyRateOverrideMinor: number | null;
   status: AttendanceStatus;
   needsReview: boolean;
   note: string;
@@ -77,5 +82,6 @@ export type ScheduleInput = {
   endMinutes: number;
   timezone: string;
   breakSeconds: number;
+  hourlyRateOverrideMinor: number | null;
   note: string;
 };

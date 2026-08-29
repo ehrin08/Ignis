@@ -27,6 +27,7 @@ export function validateScheduleInput(input: ScheduleInput, existing: ScheduledD
   if (!Number.isFinite(input.breakSeconds)) return 'Unpaid break must be a number of minutes.';
   if (input.breakSeconds < 0) return 'Unpaid break cannot be negative.';
   if (input.breakSeconds >= durationSeconds) return 'Unpaid break must be shorter than the duty.';
+  if (input.hourlyRateOverrideMinor !== null && (!Number.isInteger(input.hourlyRateOverrideMinor) || input.hourlyRateOverrideMinor <= 0)) return 'Hourly rate override must be greater than zero.';
 
   const requestedPreviewEnd = input.endDate ? localTomorrow(input.endDate) : localTomorrow(input.startDate);
   const previewEnd = requestedPreviewEnd < nextMaterializationEnd() ? requestedPreviewEnd : nextMaterializationEnd();

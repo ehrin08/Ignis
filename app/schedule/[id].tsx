@@ -25,6 +25,7 @@ const scopeOptions: { value: ScheduleEditScope; label: string }[] = [
   { value: 'future', label: 'This + future' },
 ];
 const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const standardBreakMinutes = [30, 60, 120] as const;
 
 export default function ScheduleEntryScreen() {
   const theme = useIgnisTheme();
@@ -49,7 +50,11 @@ export default function ScheduleEntryScreen() {
   const [repeatEndDate, setRepeatEndDate] = useState(existingSeries?.endDate ?? '');
   const [recurrence, setRecurrence] = useState<RecurrenceType>(existingSeries?.recurrence ?? 'once');
   const [weekdayMask, setWeekdayMask] = useState(existingSeries?.weekdayMask ?? [initialStart.getDay()]);
-  const [breakMinutes, setBreakMinutes] = useState(String(Math.round((existing?.breakSeconds ?? 0) / 60)));
+  const [breakMinutes, setBreakMinutes] = useState(existing ? Math.round(existing.breakSeconds / 60) : 30);
+  const [hourlyRateOverride, setHourlyRateOverride] = useState(() => {
+    const value = existing?.hourlyRateOverrideMinor ?? existingSeries?.hourlyRateOverrideMinor;
+    return value === null || value === undefined ? '' : (value / 100).toString();
+  });
   const [note, setNote] = useState(existing?.note ?? '');
   const [scope, setScope] = useState<ScheduleEditScope>('occurrence');
   const [picker, setPicker] = useState<'date' | 'start' | 'end' | 'repeatEnd' | null>(null);
@@ -88,7 +93,8 @@ export default function ScheduleEntryScreen() {
     startMinutes: startTime.getHours() * 60 + startTime.getMinutes(),
     endMinutes: endTime.getHours() * 60 + endTime.getMinutes(),
     timezone: existing?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
-    breakSeconds: Math.round(Number(breakMinutes) * 60),
+    breakSeconds: breakMinutes * 60,
+    hourlyRateOverrideMinor: hourlyRateOverride.trim() === '' ? null : Math.round(Number(hourlyRateOverride.replace(',', '.')) * 100),
     note,
   };
 
@@ -233,7 +239,22 @@ export default function ScheduleEntryScreen() {
           {repeatEndDate ? <ActionButton kind="outlined" label="Clear end date" onPress={() => { setRepeatEndDate(''); setDirty(true); }} /> : null}
         </View>
       ) : null}
-      <FormField keyboardType="number-pad" label="Unpaid break minutes" onChangeText={(value) => { setBreakMinutes(value); setDirty(true); }} value={breakMinutes} />
+      <View style={styles.fieldGroup}>
+        <AppText variant="label">Unpaid break</AppText>
+        <Segment
+          onChange={(value) => { if (value !== 'custom') setBreakMinutes(Number(value)); setDirty(true); }}
+          options={breakOptions(breakMinutes)}
+          value={standardBreakMinutes.includes(breakMinutes as 30 | 60 | 120) ? String(breakMinutes) as '30' | '60' | '120' : 'custom'}
+        />
+        {standardBreakMinutes.includes(breakMinutes as 30 | 60 | 120) ? null : <AppText variant="muted">Existing break: {breakMinutes} minutes. Choose a preset to replace it.</AppText>}
+      </View>
+      <FormField
+        keyboardType="decimal-pad"
+        label="Hourly rate override (optional)"
+        onChangeText={(value) => { setHourlyRateOverride(value); setDirty(true); }}
+        placeholder="Use default hourly rate"
+        value={hourlyRateOverride}
+      />
       <FormField label="Note (optional)" multiline onChangeText={(value) => { setNote(value); setDirty(true); }} placeholder="Training, location, duty type…" value={note} />
 
       {error ? <AppText style={{ color: theme.colors.danger }}>{error}</AppText> : null}
@@ -279,6 +300,12 @@ function nextRoundedHour() {
 function formatDate(value: string) { return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${value}T12:00:00`)); }
 function formatTime(value: Date) { return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(value); }
 function fullWeekday(day: number) { return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day]; }
+function breakOptions(minutes: number): { value: '30' | '60' | '120' | 'custom'; label: string }[] {
+  const options: { value: '30' | '60' | '120' | 'custom'; label: string }[] = [
+    { value: '30', label: '30 min' }, { value: '60', label: '1 hr' }, { value: '120', label: '2 hrs' },
+  ];
+  return standardBreakMinutes.includes(minutes as 30 | 60 | 120) ? options : [...options, { value: 'custom', label: `${minutes} min` }];
+}
 
 const styles = StyleSheet.create({
   screen: { gap: spacing.xl, paddingTop: spacing.lg },
