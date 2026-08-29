@@ -1,0 +1,52 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+
+import { ActionButton, AppText, Screen } from '@/src/components/primitives';
+import { SettingsEditor, validateSettings } from '@/src/components/settings-editor';
+import { useAppData } from '@/src/providers/app-provider';
+import { spacing, useIgnisTheme } from '@/src/theme/tokens';
+
+export default function OnboardingScreen() {
+  const theme = useIgnisTheme();
+  const { settings, saveSettings } = useAppData();
+  const [draft, setDraft] = useState(settings);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function complete() {
+    const problem = validateSettings(draft);
+    if (problem) return setError(problem);
+    setSaving(true);
+    try {
+      await saveSettings({ ...draft, onboardingCompleted: true });
+      router.replace('/(tabs)');
+    } catch {
+      setError('Your setup could not be saved. Check the values and try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Screen scroll>
+      <View style={styles.hero}>
+        <View style={[styles.mark, { borderColor: theme.colors.ink }]}><View style={[styles.markCore, { backgroundColor: theme.colors.accent }]} /></View>
+        <AppText variant="displayStrong" style={styles.brand}>IGNIS</AppText>
+        <AppText variant="title">Set the rules once. See every estimate clearly.</AppText>
+        <AppText variant="muted">Ignis keeps your schedules and attendance on this device and estimates gross pay before taxes or deductions.</AppText>
+      </View>
+      <SettingsEditor onChange={setDraft} value={draft} />
+      {error ? <AppText style={{ color: theme.colors.danger, marginTop: spacing.lg }}>{error}</AppText> : null}
+      <ActionButton label="Open my schedule" loading={saving} onPress={complete} style={styles.finish} />
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  hero: { paddingTop: 34, gap: 12 },
+  mark: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  markCore: { width: 14, height: 14, borderRadius: 7 },
+  brand: { fontSize: 44 },
+  finish: { marginTop: 32 },
+});

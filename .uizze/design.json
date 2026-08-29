@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-29T05:41:02.597Z",
+  "title": "Design System: Ignis",
+  "extensions": {
+    "colorMeta": {
+      "light-background": { "role": "neutral", "displayName": "Warm Field", "canonical": "#EAE8E1", "tonalRamp": ["color-mix(in oklch, #EAE8E1 30%, black)", "color-mix(in oklch, #EAE8E1 50%, black)", "color-mix(in oklch, #EAE8E1 70%, black)", "#EAE8E1", "color-mix(in oklch, #EAE8E1 85%, white)", "color-mix(in oklch, #EAE8E1 65%, white)", "color-mix(in oklch, #EAE8E1 40%, white)", "color-mix(in oklch, #EAE8E1 15%, white)"] },
+      "light-surface": { "role": "neutral", "displayName": "Ledger Paper", "canonical": "#F5F3EC", "tonalRamp": ["color-mix(in oklch, #F5F3EC 30%, black)", "color-mix(in oklch, #F5F3EC 50%, black)", "color-mix(in oklch, #F5F3EC 70%, black)", "#F5F3EC", "color-mix(in oklch, #F5F3EC 85%, white)", "color-mix(in oklch, #F5F3EC 65%, white)", "color-mix(in oklch, #F5F3EC 40%, white)", "color-mix(in oklch, #F5F3EC 15%, white)"] },
+      "light-surface-raised": { "role": "neutral", "displayName": "Raised Paper", "canonical": "#FEFCF4", "tonalRamp": ["color-mix(in oklch, #FEFCF4 30%, black)", "color-mix(in oklch, #FEFCF4 50%, black)", "color-mix(in oklch, #FEFCF4 70%, black)", "#FEFCF4", "color-mix(in oklch, #FEFCF4 85%, white)", "color-mix(in oklch, #FEFCF4 65%, white)", "color-mix(in oklch, #FEFCF4 40%, white)", "color-mix(in oklch, #FEFCF4 15%, white)"] },
+      "light-surface-strong": { "role": "neutral", "displayName": "Graphite Instrument", "canonical": "#20211F", "tonalRamp": ["color-mix(in oklch, #20211F 30%, black)", "color-mix(in oklch, #20211F 50%, black)", "color-mix(in oklch, #20211F 70%, black)", "#20211F", "color-mix(in oklch, #20211F 85%, white)", "color-mix(in oklch, #20211F 65%, white)", "color-mix(in oklch, #20211F 40%, white)", "color-mix(in oklch, #20211F 15%, white)"] },
+      "light-on-surface-strong": { "role": "neutral", "displayName": "Instrument Paper", "canonical": "#F5F3EC", "tonalRamp": ["color-mix(in oklch, #F5F3EC 30%, black)", "color-mix(in oklch, #F5F3EC 50%, black)", "color-mix(in oklch, #F5F3EC 70%, black)", "#F5F3EC", "color-mix(in oklch, #F5F3EC 85%, white)", "color-mix(in oklch, #F5F3EC 65%, white)", "color-mix(in oklch, #F5F3EC 40%, white)", "color-mix(in oklch, #F5F3EC 15%, white)"] },
+      "light-on-surface-strong-muted": { "role": "neutral", "displayName": "Muted Instrument Paper", "canonical": "#D5D3CB", "tonalRamp": ["color-mix(in oklch, #D5D3CB 30%, black)", "color-mix(in oklch, #D5D3CB 50%, black)", "color-mix(in oklch, #D5D3CB 70%, black)", "#D5D3CB", "color-mix(in oklch, #D5D3CB 85%, white)", "color-mix(in oklch, #D5D3CB 65%, white)", "color-mix(in oklch, #D5D3CB 40%, white)", "color-mix(in oklch, #D5D3CB 15%, white)"] },
+      "light-instrument-line": { "role": "neutral", "displayName": "Instrument Line", "canonical": "#8E8E87", "tonalRamp": ["color-mix(in oklch, #8E8E87 30%, black)", "color-mix(in oklch, #8E8E87 50%, black)", "color-mix(in oklch, #8E8E87 70%, black)", "#8E8E87", "color-mix(in oklch, #8E8E87 85%, white)", "color-mix(in oklch, #8E8E87 65%, white)", "color-mix(in oklch, #8E8E87 40%, white)", "color-mix(in oklch, #8E8E87 15%, white)"] },
+      "light-ink": { "role": "neutral", "displayName": "Ledger Ink", "canonical": "#151615", "tonalRamp": ["color-mix(in oklch, #151615 30%, black)", "color-mix(in oklch, #151615 50%, black)", "color-mix(in oklch, #151615 70%, black)", "#151615", "color-mix(in oklch, #151615 85%, white)", "color-mix(in oklch, #151615 65%, white)", "color-mix(in oklch, #151615 40%, white)", "color-mix(in oklch, #151615 15%, white)"] },
+      "light-ink-muted": { "role": "neutral", "displayName": "Muted Ledger Ink", "canonical": "#5B5C57", "tonalRamp": ["color-mix(in oklch, #5B5C57 30%, black)", "color-mix(in oklch, #5B5C57 50%, black)", "color-mix(in oklch, #5B5C57 70%, black)", "#5B5C57", "color-mix(in oklch, #5B5C57 85%, white)", "color-mix(in oklch, #5B5C57 65%, white)", "color-mix(in oklch, #5B5C57 40%, white)", "color-mix(in oklch, #5B5C57 15%, white)"] },
+      "light-outline": { "role": "neutral", "displayName": "Ledger Rule", "canonical": "#B9B7AE", "tonalRamp": ["color-mix(in oklch, #B9B7AE 30%, black)", "color-mix(in oklch, #B9B7AE 50%, black)", "color-mix(in oklch, #B9B7AE 70%, black)", "#B9B7AE", "color-mix(in oklch, #B9B7AE 85%, white)", "color-mix(in oklch, #B9B7AE 65%, white)", "color-mix(in oklch, #B9B7AE 40%, white)", "color-mix(in oklch, #B9B7AE 15%, white)"] },
+      "light-outline-strong": { "role": "neutral", "displayName": "Strong Ledger Rule", "canonical": "#5E5F5A", "tonalRamp": ["color-mix(in oklch, #5E5F5A 30%, black)", "color-mix(in oklch, #5E5F5A 50%, black)", "color-mix(in oklch, #5E5F5A 70%, black)", "#5E5F5A", "color-mix(in oklch, #5E5F5A 85%, white)", "color-mix(in oklch, #5E5F5A 65%, white)", "color-mix(in oklch, #5E5F5A 40%, white)", "color-mix(in oklch, #5E5F5A 15%, white)"] },
+      "light-accent": { "role": "primary", "displayName": "Signal Red", "canonical": "#D92C25", "tonalRamp": ["color-mix(in oklch, #D92C25 30%, black)", "color-mix(in oklch, #D92C25 50%, black)", "color-mix(in oklch, #D92C25 70%, black)", "#D92C25", "color-mix(in oklch, #D92C25 85%, white)", "color-mix(in oklch, #D92C25 65%, white)", "color-mix(in oklch, #D92C25 40%, white)", "color-mix(in oklch, #D92C25 15%, white)"] },
+      "light-on-accent": { "role": "neutral", "displayName": "Signal White", "canonical": "#FFFFFF", "tonalRamp": ["color-mix(in oklch, #FFFFFF 30%, black)", "color-mix(in oklch, #FFFFFF 50%, black)", "color-mix(in oklch, #FFFFFF 70%, black)", "#FFFFFF", "color-mix(in oklch, #FFFFFF 85%, white)", "color-mix(in oklch, #FFFFFF 65%, white)", "color-mix(in oklch, #FFFFFF 40%, white)", "color-mix(in oklch, #FFFFFF 15%, white)"] },
+      "light-success": { "role": "secondary", "displayName": "Attendance Green", "canonical": "#2E7D4D", "tonalRamp": ["color-mix(in oklch, #2E7D4D 30%, black)", "color-mix(in oklch, #2E7D4D 50%, black)", "color-mix(in oklch, #2E7D4D 70%, black)", "#2E7D4D", "color-mix(in oklch, #2E7D4D 85%, white)", "color-mix(in oklch, #2E7D4D 65%, white)", "color-mix(in oklch, #2E7D4D 40%, white)", "color-mix(in oklch, #2E7D4D 15%, white)"] },
+      "light-danger": { "role": "secondary", "displayName": "Danger Red", "canonical": "#BA1A1A", "tonalRamp": ["color-mix(in oklch, #BA1A1A 30%, black)", "color-mix(in oklch, #BA1A1A 50%, black)", "color-mix(in oklch, #BA1A1A 70%, black)", "#BA1A1A", "color-mix(in oklch, #BA1A1A 85%, white)", "color-mix(in oklch, #BA1A1A 65%, white)", "color-mix(in oklch, #BA1A1A 40%, white)", "color-mix(in oklch, #BA1A1A 15%, white)"] },
+      "dark-background": { "role": "neutral", "displayName": "Dark Field", "canonical": "#0B0B0A", "tonalRamp": ["color-mix(in oklch, #0B0B0A 30%, black)", "color-mix(in oklch, #0B0B0A 50%, black)", "color-mix(in oklch, #0B0B0A 70%, black)", "#0B0B0A", "color-mix(in oklch, #0B0B0A 85%, white)", "color-mix(in oklch, #0B0B0A 65%, white)", "color-mix(in oklch, #0B0B0A 40%, white)", "color-mix(in oklch, #0B0B0A 15%, white)"] },
+      "dark-surface": { "role": "neutral", "displayName": "Dark Ledger Paper", "canonical": "#151614", "tonalRamp": ["color-mix(in oklch, #151614 30%, black)", "color-mix(in oklch, #151614 50%, black)", "color-mix(in oklch, #151614 70%, black)", "#151614", "color-mix(in oklch, #151614 85%, white)", "color-mix(in oklch, #151614 65%, white)", "color-mix(in oklch, #151614 40%, white)", "color-mix(in oklch, #151614 15%, white)"] },
+      "dark-surface-raised": { "role": "neutral", "displayName": "Dark Raised Paper", "canonical": "#1D1E1B", "tonalRamp": ["color-mix(in oklch, #1D1E1B 30%, black)", "color-mix(in oklch, #1D1E1B 50%, black)", "color-mix(in oklch, #1D1E1B 70%, black)", "#1D1E1B", "color-mix(in oklch, #1D1E1B 85%, white)", "color-mix(in oklch, #1D1E1B 65%, white)", "color-mix(in oklch, #1D1E1B 40%, white)", "color-mix(in oklch, #1D1E1B 15%, white)"] },
+      "dark-surface-strong": { "role": "neutral", "displayName": "Light Graphite Instrument", "canonical": "#E9E7DF", "tonalRamp": ["color-mix(in oklch, #E9E7DF 30%, black)", "color-mix(in oklch, #E9E7DF 50%, black)", "color-mix(in oklch, #E9E7DF 70%, black)", "#E9E7DF", "color-mix(in oklch, #E9E7DF 85%, white)", "color-mix(in oklch, #E9E7DF 65%, white)", "color-mix(in oklch, #E9E7DF 40%, white)", "color-mix(in oklch, #E9E7DF 15%, white)"] },
+      "dark-on-surface-strong": { "role": "neutral", "displayName": "Dark Instrument Ink", "canonical": "#151614", "tonalRamp": ["color-mix(in oklch, #151614 30%, black)", "color-mix(in oklch, #151614 50%, black)", "color-mix(in oklch, #151614 70%, black)", "#151614", "color-mix(in oklch, #151614 85%, white)", "color-mix(in oklch, #151614 65%, white)", "color-mix(in oklch, #151614 40%, white)", "color-mix(in oklch, #151614 15%, white)"] },
+      "dark-on-surface-strong-muted": { "role": "neutral", "displayName": "Muted Dark Instrument Ink", "canonical": "#454640", "tonalRamp": ["color-mix(in oklch, #454640 30%, black)", "color-mix(in oklch, #454640 50%, black)", "color-mix(in oklch, #454640 70%, black)", "#454640", "color-mix(in oklch, #454640 85%, white)", "color-mix(in oklch, #454640 65%, white)", "color-mix(in oklch, #454640 40%, white)", "color-mix(in oklch, #454640 15%, white)"] },
+      "dark-instrument-line": { "role": "neutral", "displayName": "Dark Instrument Line", "canonical": "#686963", "tonalRamp": ["color-mix(in oklch, #686963 30%, black)", "color-mix(in oklch, #686963 50%, black)", "color-mix(in oklch, #686963 70%, black)", "#686963", "color-mix(in oklch, #686963 85%, white)", "color-mix(in oklch, #686963 65%, white)", "color-mix(in oklch, #686963 40%, white)", "color-mix(in oklch, #686963 15%, white)"] },
+      "dark-ink": { "role": "neutral", "displayName": "Dark Ledger Ink", "canonical": "#F1EFE7", "tonalRamp": ["color-mix(in oklch, #F1EFE7 30%, black)", "color-mix(in oklch, #F1EFE7 50%, black)", "color-mix(in oklch, #F1EFE7 70%, black)", "#F1EFE7", "color-mix(in oklch, #F1EFE7 85%, white)", "color-mix(in oklch, #F1EFE7 65%, white)", "color-mix(in oklch, #F1EFE7 40%, white)", "color-mix(in oklch, #F1EFE7 15%, white)"] },
+      "dark-ink-muted": { "role": "neutral", "displayName": "Muted Dark Ledger Ink", "canonical": "#B9B7AF", "tonalRamp": ["color-mix(in oklch, #B9B7AF 30%, black)", "color-mix(in oklch, #B9B7AF 50%, black)", "color-mix(in oklch, #B9B7AF 70%, black)", "#B9B7AF", "color-mix(in oklch, #B9B7AF 85%, white)", "color-mix(in oklch, #B9B7AF 65%, white)", "color-mix(in oklch, #B9B7AF 40%, white)", "color-mix(in oklch, #B9B7AF 15%, white)"] },
+      "dark-outline": { "role": "neutral", "displayName": "Dark Ledger Rule", "canonical": "#454640", "tonalRamp": ["color-mix(in oklch, #454640 30%, black)", "color-mix(in oklch, #454640 50%, black)", "color-mix(in oklch, #454640 70%, black)", "#454640", "color-mix(in oklch, #454640 85%, white)", "color-mix(in oklch, #454640 65%, white)", "color-mix(in oklch, #454640 40%, white)", "color-mix(in oklch, #454640 15%, white)"] },
+      "dark-outline-strong": { "role": "neutral", "displayName": "Strong Dark Ledger Rule", "canonical": "#9A9991", "tonalRamp": ["color-mix(in oklch, #9A9991 30%, black)", "color-mix(in oklch, #9A9991 50%, black)", "color-mix(in oklch, #9A9991 70%, black)", "#9A9991", "color-mix(in oklch, #9A9991 85%, white)", "color-mix(in oklch, #9A9991 65%, white)", "color-mix(in oklch, #9A9991 40%, white)", "color-mix(in oklch, #9A9991 15%, white)"] },
+      "dark-accent": { "role": "primary", "displayName": "Dark Signal Red", "canonical": "#FF5148", "tonalRamp": ["color-mix(in oklch, #FF5148 30%, black)", "color-mix(in oklch, #FF5148 50%, black)", "color-mix(in oklch, #FF5148 70%, black)", "#FF5148", "color-mix(in oklch, #FF5148 85%, white)", "color-mix(in oklch, #FF5148 65%, white)", "color-mix(in oklch, #FF5148 40%, white)", "color-mix(in oklch, #FF5148 15%, white)"] },
+      "dark-on-accent": { "role": "neutral", "displayName": "Dark Signal Ink", "canonical": "#220503", "tonalRamp": ["color-mix(in oklch, #220503 30%, black)", "color-mix(in oklch, #220503 50%, black)", "color-mix(in oklch, #220503 70%, black)", "#220503", "color-mix(in oklch, #220503 85%, white)", "color-mix(in oklch, #220503 65%, white)", "color-mix(in oklch, #220503 40%, white)", "color-mix(in oklch, #220503 15%, white)"] },
+      "dark-success": { "role": "secondary", "displayName": "Dark Attendance Green", "canonical": "#72D49A", "tonalRamp": ["color-mix(in oklch, #72D49A 30%, black)", "color-mix(in oklch, #72D49A 50%, black)", "color-mix(in oklch, #72D49A 70%, black)", "#72D49A", "color-mix(in oklch, #72D49A 85%, white)", "color-mix(in oklch, #72D49A 65%, white)", "color-mix(in oklch, #72D49A 40%, white)", "color-mix(in oklch, #72D49A 15%, white)"] },
+      "dark-danger": { "role": "secondary", "displayName": "Dark Danger Red", "canonical": "#FFB4AB", "tonalRamp": ["color-mix(in oklch, #FFB4AB 30%, black)", "color-mix(in oklch, #FFB4AB 50%, black)", "color-mix(in oklch, #FFB4AB 70%, black)", "#FFB4AB", "color-mix(in oklch, #FFB4AB 85%, white)", "color-mix(in oklch, #FFB4AB 65%, white)", "color-mix(in oklch, #FFB4AB 40%, white)", "color-mix(in oklch, #FFB4AB 15%, white)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Instrument Display", "purpose": "Doto_700Bold with tabular numerals for duty pay and measured values." },
+      "display-strong": { "displayName": "Strong Instrument Display", "purpose": "Doto_800ExtraBold with tabular numerals for pay totals, next-duty time, and the IGNIS wordmark." },
+      "title": { "displayName": "Title", "purpose": "Bold sans-serif for screen, section, day-group, and empty-state headings." },
+      "body": { "displayName": "Body", "purpose": "Sans-serif for explanations, dates, errors, and field values." },
+      "label": { "displayName": "Operational Label", "purpose": "Bold uppercase sans-serif for actions, fields, states, totals, and navigation." },
+      "muted": { "displayName": "Muted Body", "purpose": "Supporting period ranges, notes, durations, and disclaimers." }
+    },
+    "shadows": [
+      { "name": "next-duty-elevation", "value": "Android elevation 3", "purpose": "Separates the graphite next-duty instrument from the schedule field." },
+      { "name": "floating-action-elevation", "value": "Android elevation 5", "purpose": "Keeps the schedule add action above scrolling evidence." }
+    ],
+    "motion": [
+      { "name": "pressed-opacity-primary", "value": "opacity 0.72", "purpose": "Pressed feedback for filled, floating, and primary actions." },
+      { "name": "pressed-opacity-compact", "value": "opacity 0.62", "purpose": "Pressed feedback for duty rows, chips, icon controls, and attendance actions." },
+      { "name": "success-haptic", "value": "Expo notification success", "purpose": "Confirms schedule saves and attendance changes without adding decorative animation." },
+      { "name": "tab-haptic", "value": "Expo Router custom haptic tab", "purpose": "Provides native tactile response when moving among the three destinations." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Filled Action Button",
+      "kind": "button",
+      "refersTo": "action-button-filled",
+      "description": "A 52 dp graphite action for saving or adding schedule data.",
+      "html": "<button class=\"ds-action-filled\">SAVE CHANGES</button>",
+      "css": ".ds-action-filled{min-height:52px;padding:0 16px;border:1.5px solid #20211F;border-radius:12px;background:#20211F;color:#EAE8E1;font:700 14px/18px sans-serif;letter-spacing:.7px;text-transform:uppercase;transition:opacity 90ms ease}.ds-action-filled:hover{opacity:.88}.ds-action-filled:active{opacity:.72}.ds-action-filled:focus-visible{outline:3px solid #D92C25;outline-offset:3px}@media(prefers-color-scheme:dark){.ds-action-filled{background:#E9E7DF;border-color:#E9E7DF;color:#0B0B0A}.ds-action-filled:focus-visible{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Outlined Action Button",
+      "kind": "button",
+      "refersTo": "action-button-outlined",
+      "description": "A transparent secondary action used for recovery, clearing, and alternate decisions.",
+      "html": "<button class=\"ds-action-outlined\">RETURN TO SCHEDULE</button>",
+      "css": ".ds-action-outlined{min-height:52px;padding:0 16px;border:1.5px solid #5E5F5A;border-radius:12px;background:transparent;color:#151615;font:700 14px/18px sans-serif;letter-spacing:.7px;text-transform:uppercase;transition:background 90ms ease,opacity 90ms ease}.ds-action-outlined:hover{background:#F5F3EC}.ds-action-outlined:active{opacity:.62}.ds-action-outlined:focus-visible{outline:3px solid #D92C25;outline-offset:3px}@media(prefers-color-scheme:dark){.ds-action-outlined{border-color:#9A9991;color:#F1EFE7}.ds-action-outlined:hover{background:#151614}.ds-action-outlined:focus-visible{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Danger Action Button",
+      "kind": "button",
+      "refersTo": "action-button-danger",
+      "description": "A destructive action for AWOL correction or schedule deletion.",
+      "html": "<button class=\"ds-action-danger\">DELETE DUTY</button>",
+      "css": ".ds-action-danger{min-height:52px;padding:0 16px;border:1.5px solid #BA1A1A;border-radius:12px;background:#BA1A1A;color:#EAE8E1;font:700 14px/18px sans-serif;letter-spacing:.7px;text-transform:uppercase;transition:opacity 90ms ease}.ds-action-danger:hover{opacity:.88}.ds-action-danger:active{opacity:.72}.ds-action-danger:focus-visible{outline:3px solid #D92C25;outline-offset:3px}.ds-action-danger:disabled{opacity:.38}@media(prefers-color-scheme:dark){.ds-action-danger{background:#FFB4AB;border-color:#FFB4AB;color:#0B0B0A}.ds-action-danger:focus-visible{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Form Field",
+      "kind": "input",
+      "refersTo": "form-field",
+      "description": "A labeled tonal field with explicit invalid copy.",
+      "html": "<label class=\"ds-field\"><span>UNPAID BREAK MINUTES</span><input value=\"30\" aria-describedby=\"ds-field-help\"><small id=\"ds-field-help\">Enter a valid break duration.</small></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#151615;font:700 14px/18px sans-serif;letter-spacing:.7px}.ds-field>span{text-transform:uppercase}.ds-field input{min-height:52px;padding:0 12px;border:1px solid #BA1A1A;border-radius:12px;background:#F5F3EC;color:#151615;font:400 17px/23px sans-serif}.ds-field input:hover{background:#FEFCF4}.ds-field input:focus-visible{outline:3px solid #D92C25;outline-offset:2px}.ds-field small{color:#BA1A1A;font:400 13px/18px sans-serif;letter-spacing:0}@media(prefers-color-scheme:dark){.ds-field{color:#F1EFE7}.ds-field input{background:#151614;border-color:#FFB4AB;color:#F1EFE7}.ds-field input:hover{background:#1D1E1B}.ds-field input:focus-visible{outline-color:#FF5148}.ds-field small{color:#FFB4AB}}"
+    },
+    {
+      "name": "Segment Control",
+      "kind": "chip",
+      "refersTo": "segment-selected",
+      "description": "An outlined radio group for recurrence and edit scope.",
+      "html": "<div class=\"ds-segment\" role=\"radiogroup\"><button role=\"radio\" aria-checked=\"true\">ONE-OFF</button><button role=\"radio\" aria-checked=\"false\">DAILY</button><button role=\"radio\" aria-checked=\"false\">WEEKDAYS</button></div>",
+      "css": ".ds-segment{display:flex;padding:3px;border:1px solid #B9B7AE;border-radius:12px}.ds-segment button{flex:1;min-height:48px;padding:0 4px;border:0;border-radius:8px;background:transparent;color:#151615;font:700 12px/18px sans-serif;letter-spacing:.7px}.ds-segment button[aria-checked=true]{background:#20211F;color:#EAE8E1}.ds-segment button:hover{background:#F5F3EC}.ds-segment button[aria-checked=true]:hover{background:#20211F}.ds-segment button:active{opacity:.62}.ds-segment button:focus-visible{outline:3px solid #D92C25;outline-offset:1px}@media(prefers-color-scheme:dark){.ds-segment{border-color:#454640}.ds-segment button{color:#F1EFE7}.ds-segment button[aria-checked=true]{background:#E9E7DF;color:#151614}.ds-segment button:hover{background:#151614}.ds-segment button[aria-checked=true]:hover{background:#E9E7DF}.ds-segment button:focus-visible{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Weekday Choice",
+      "kind": "chip",
+      "refersTo": "weekday-chip-selected",
+      "description": "A 48 dp checkbox used to build selected-weekday recurrence.",
+      "html": "<div class=\"ds-weekdays\"><button aria-checked=\"false\" role=\"checkbox\">S</button><button aria-checked=\"true\" role=\"checkbox\">M</button><button aria-checked=\"true\" role=\"checkbox\">T</button><button aria-checked=\"false\" role=\"checkbox\">W</button></div>",
+      "css": ".ds-weekdays{display:flex;gap:8px}.ds-weekdays button{width:48px;height:48px;border:1px solid #B9B7AE;border-radius:8px;background:#F5F3EC;color:#151615;font:700 14px/18px sans-serif;letter-spacing:.7px}.ds-weekdays button[aria-checked=true]{background:#20211F;color:#F5F3EC}.ds-weekdays button:hover{background:#FEFCF4}.ds-weekdays button[aria-checked=true]:hover{background:#20211F}.ds-weekdays button:active{opacity:.62}.ds-weekdays button:focus-visible{outline:3px solid #D92C25;outline-offset:2px}@media(prefers-color-scheme:dark){.ds-weekdays button{border-color:#454640;background:#151614;color:#F1EFE7}.ds-weekdays button[aria-checked=true]{background:#E9E7DF;color:#151614}.ds-weekdays button:hover{background:#1D1E1B}.ds-weekdays button[aria-checked=true]:hover{background:#E9E7DF}.ds-weekdays button:focus-visible{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Next Duty Instrument",
+      "kind": "custom",
+      "refersTo": "next-duty-instrument",
+      "description": "The graphite schedule instrument that makes the next duty immediately legible.",
+      "html": "<section class=\"ds-next-duty\"><header><b>NEXT DUTY</b><span><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></header><strong>08:00 AM</strong><p>Monday, Aug 31 · until 05:00 PM</p><small>Scheduled duty</small></section>",
+      "css": ".ds-next-duty{min-height:196px;padding:16px;border-radius:16px;background:#20211F;color:#F5F3EC;box-shadow:0 3px 6px rgba(0,0,0,.22);display:grid;align-content:start;gap:8px}.ds-next-duty header{display:flex;align-items:center;gap:12px}.ds-next-duty header>b{font:700 14px/18px sans-serif;letter-spacing:.7px;color:#D5D3CB}.ds-next-duty header>span{flex:1;display:flex;justify-content:space-between}.ds-next-duty header i{width:5px;height:5px;border-radius:3px;background:#D5D3CB;opacity:.7}.ds-next-duty strong{margin-top:8px;font:800 48px/56px Doto_800ExtraBold,monospace;font-variant-numeric:tabular-nums}.ds-next-duty p{margin:0;font:400 16px/23px sans-serif}.ds-next-duty small{color:#D5D3CB;font:400 14px/20px sans-serif}.ds-next-duty:hover{box-shadow:0 4px 8px rgba(0,0,0,.28)}.ds-next-duty:focus-within{outline:3px solid #D92C25;outline-offset:3px}@media(prefers-color-scheme:dark){.ds-next-duty{background:#E9E7DF;color:#151614}.ds-next-duty header>b,.ds-next-duty small{color:#454640}.ds-next-duty header i{background:#454640}.ds-next-duty:focus-within{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Duty Row",
+      "kind": "card",
+      "refersTo": "duty-row",
+      "description": "An outlined schedule row with status, pay, and an optional attendance review tray.",
+      "html": "<article class=\"ds-duty\"><button class=\"ds-duty-main\"><i></i><span><b>08:00 AM—05:00 PM</b><small>8.50 hrs scheduled</small></span><aside><em>✓ COMPLETED</em><strong>₱4,760.00</strong></aside></button><footer><button>✓ COMPLETE</button><button>⊘ MARK AWOL</button></footer></article>",
+      "css": ".ds-duty{overflow:hidden;border:1px solid #B9B7AE;border-radius:12px;color:#151615}.ds-duty-main{width:100%;min-height:76px;padding:0 12px;border:0;background:transparent;color:inherit;display:flex;align-items:center;gap:12px;text-align:left}.ds-duty-main>i{width:16px;height:16px;border:2px solid #2E7D4D;border-radius:8px;background:#2E7D4D}.ds-duty-main>span{flex:1;min-width:0;display:grid;gap:3px}.ds-duty-main b{font:700 14px/18px sans-serif;letter-spacing:.7px}.ds-duty-main small{color:#5B5C57;font:400 14px/20px sans-serif}.ds-duty-main aside{max-width:42%;display:grid;justify-items:end;gap:3px}.ds-duty-main em{color:#2E7D4D;font:700 11px/16px sans-serif;letter-spacing:.7px;font-style:normal}.ds-duty-main strong{max-width:138px;font:700 19px/24px Doto_700Bold,monospace;font-variant-numeric:tabular-nums}.ds-duty-main:hover{background:#FEFCF4}.ds-duty-main:active{opacity:.62}.ds-duty-main:focus-visible,.ds-duty footer button:focus-visible{outline:3px solid #D92C25;outline-offset:-3px}.ds-duty footer{display:flex;gap:8px;padding:8px;border-top:1px dashed #B9B7AE}.ds-duty footer button{flex:1;min-height:48px;border:1px solid #2E7D4D;border-radius:8px;background:transparent;color:#2E7D4D;font:700 11px/16px sans-serif;letter-spacing:.7px}.ds-duty footer button+button{border-color:#BA1A1A;color:#BA1A1A}.ds-duty footer button:hover{background:#F5F3EC}.ds-duty footer button:active{opacity:.62}@media(prefers-color-scheme:dark){.ds-duty{border-color:#454640;color:#F1EFE7}.ds-duty-main small{color:#B9B7AF}.ds-duty-main:hover{background:#1D1E1B}.ds-duty-main>i{border-color:#72D49A;background:#72D49A}.ds-duty-main em{color:#72D49A}.ds-duty footer{border-top-color:#454640}.ds-duty footer button{border-color:#72D49A;color:#72D49A}.ds-duty footer button+button{border-color:#FFB4AB;color:#FFB4AB}.ds-duty footer button:hover{background:#151614}.ds-duty-main:focus-visible,.ds-duty footer button:focus-visible{outline-color:#FF5148}}"
+    },
+    {
+      "name": "Floating Add Button",
+      "kind": "button",
+      "refersTo": "floating-add-button",
+      "description": "The single signal-red floating action for adding a schedule.",
+      "html": "<button class=\"ds-fab\" aria-label=\"Add a schedule\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z\"/></svg></button>",
+      "css": ".ds-fab{width:58px;height:58px;border:0;border-radius:18px;background:#D92C25;color:#FFFFFF;display:grid;place-items:center;box-shadow:0 5px 10px rgba(0,0,0,.28);transition:opacity 90ms ease,transform 90ms ease}.ds-fab svg{width:28px;height:28px;fill:currentColor}.ds-fab:hover{transform:translateY(-1px)}.ds-fab:active{opacity:.72;transform:none}.ds-fab:focus-visible{outline:3px solid #5E5F5A;outline-offset:3px}@media(prefers-reduced-motion:reduce){.ds-fab{transition:none}.ds-fab:hover{transform:none}}@media(prefers-color-scheme:dark){.ds-fab{background:#FF5148;color:#220503}.ds-fab:focus-visible{outline-color:#9A9991}}"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "bottom-navigation",
+      "description": "The 72 dp three-destination navigation bar for Today, Schedule, and Settings.",
+      "html": "<nav class=\"ds-bottom-nav\" aria-label=\"Primary\"><button><svg viewBox=\"0 0 24 24\"><path d=\"M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm.5 5v5.25l4.5 2.67-.75 1.23L11 13V7h1.5z\"/></svg><span>TODAY</span></button><button aria-current=\"page\"><svg viewBox=\"0 0 24 24\"><path d=\"M6 2h12v20l-3-2-3 2-3-2-3 2V2zm2 4v2h8V6H8zm0 4v2h8v-2H8z\"/></svg><span>SCHEDULE</span></button><button><svg viewBox=\"0 0 24 24\"><path d=\"M3 6h10v2H3V6zm14 0h4v2h-4V6zm-2-2h2v6h-2V4zM3 16h4v2H3v-2zm8 0h10v2H11v-2zm-2-2h2v6H9v-6z\"/></svg><span>SETTINGS</span></button></nav>",
+      "css": ".ds-bottom-nav{height:72px;padding-top:7px;border-top:1px solid #B9B7AE;background:#EAE8E1;display:flex}.ds-bottom-nav button{flex:1;min-width:48px;min-height:48px;border:0;background:transparent;color:#5B5C57;display:grid;place-items:center;align-content:center;gap:2px;font:700 11px/14px sans-serif;letter-spacing:.7px;text-transform:uppercase}.ds-bottom-nav svg{width:24px;height:24px;fill:currentColor}.ds-bottom-nav button[aria-current=page]{color:#151615}.ds-bottom-nav button:hover{background:#F5F3EC}.ds-bottom-nav button:active{opacity:.62}.ds-bottom-nav button:focus-visible{outline:3px solid #D92C25;outline-offset:-3px}@media(prefers-color-scheme:dark){.ds-bottom-nav{border-top-color:#454640;background:#0B0B0A}.ds-bottom-nav button{color:#B9B7AF}.ds-bottom-nav button[aria-current=page]{color:#F1EFE7}.ds-bottom-nav button:hover{background:#151614}.ds-bottom-nav button:focus-visible{outline-color:#FF5148}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Clockwork Ledger",
+    "overview": "Ignis presents the rota as an exposed attendance ledger: scheduled duties sit on a countable rail, the next duty becomes the primary instrument, and earned or projected money stays visibly attached to attendance decisions. The mood is precise, restrained, and operational. Warm paper surfaces, graphite mechanisms, sparse signal red, dot-display numerals, perforations, and ruled rows create character without turning the app into decorative calendar chrome.\n\nThe system is native React Native for compact Android phones. Material navigation, date and time pickers, confirmation dialogs, system Back, safe-area insets, scalable type, and 48 dp targets provide the interaction structure. Light and dark schemes follow the device setting. Nothing's clarity, monochrome restraint, and red accents are inspiration only; Ignis does not use Nothing trademarks, logos, proprietary fonts, or assets.",
+    "keyCharacteristics": [
+      "Schedule rails and ruled duty rows make sequence, status, and review work visible.",
+      "A graphite next-duty instrument is the dominant surface for time and rota context.",
+      "Warm paper and graphite tonal layers carry hierarchy; signal red is reserved for selection, review, and the add action.",
+      "Doto is limited to money, times, and the short IGNIS wordmark; sans-serif carries operational reading and controls.",
+      "Explicit labels, icons, outlines, and confirmation states prevent color from carrying meaning alone."
+    ],
+    "rules": [
+      { "name": "The Signal Rule", "body": "Red identifies an add action, current or unresolved schedule state, focus, or danger; it never becomes ambient decoration.", "section": "colors" },
+      { "name": "The Role-Mapping Rule", "body": "Components consume semantic theme roles and let Android select the light or dark scheme; native component logic does not hard-code light-theme values.", "section": "colors" },
+      { "name": "The Instrument Type Rule", "body": "Use Doto only for money, scheduled-time readouts, and the short IGNIS wordmark; body copy, fields, buttons, and navigation stay sans-serif.", "section": "typography" },
+      { "name": "The Scaling Rule", "body": "Display text supports Android font scaling to 1.35× and all other text to 1.6×; paired totals and trailing pay use fit or line limits rather than clipping.", "section": "typography" },
+      { "name": "The Instrument-and-Action Elevation Rule", "body": "Elevation belongs only to the next-duty instrument and the floating primary add action; ledger evidence and form surfaces use tone and outline.", "section": "elevation" },
+      { "name": "The Countable Detail Rule", "body": "Express the clockwork metaphor through semantic rails, nodes, perforations, ruled rows, and tabular numerals—not screws, photographic plastic, or raster decoration.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do keep the next duty, unresolved attendance, and traceable earned/projected pay visible in that operational order.",
+      "Do use schedule rails, nodes, perforations, dashed review rules, and duty shells as the reusable Clockwork Ledger grammar.",
+      "Do preserve Android Material structure, native pickers and dialogs, system Back, safe-area insets, scalable type, screen-reader labels, and 48 dp minimum targets.",
+      "Do use semantic light/dark roles and pair every attendance color with a label and icon.",
+      "Do keep Doto limited to money, scheduled-time readouts, and the short IGNIS wordmark."
+    ],
+    "donts": [
+      "Don't introduce live-clock controls, break controls, or a timer-led hierarchy into this schedule-first product.",
+      "Don't turn schedules into a generic calendar-card dashboard or add decorative charts, gradients, glass, or iOS controls.",
+      "Don't copy Nothing trademarks, logos, proprietary fonts, or proprietary assets.",
+      "Don't use red as ambient decoration or color alone as attendance communication.",
+      "Don't add arbitrary shadows to duty rows, totals, fields, or navigation."
+    ]
+  }
+}

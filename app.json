@@ -1,25 +1,26 @@
 {
   "expo": {
-    "name": ".scaffold",
-    "slug": ".scaffold",
+    "name": "Ignis",
+    "slug": "ignis",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "scaffold",
+    "scheme": "ignis",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#EAE8E1",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true,
+      "package": "com.ignis.shiftledger"
     },
     "web": {
       "output": "static",
@@ -33,16 +34,25 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#EAE8E1",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#0B0B0A"
           }
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-localization",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1b8e6a28-e752-4563-9ebb-9edf7fe5cf13"
+      }
     }
   }
 }
