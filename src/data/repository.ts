@@ -1,6 +1,7 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 
-import { generateOccurrences, nextMaterializationEnd, parseLocalDate, seriesFromInput, scheduledRange } from '@/src/domain/schedule';
+import { DUTY_DATE_TAKEN_MESSAGE } from '@/src/domain/duty-dates';
+import { generateOccurrences, materializationEnd, parseLocalDate, seriesFromInput, scheduledRange } from '@/src/domain/schedule';
 import { getOrCreateDeviceId } from '@/src/data/sync-state';
 import { runWriteTransaction } from '@/src/data/transactions';
 import { AppSettings, AttendanceStatus, RateOverride, ScheduledDuty, ScheduleEditScope, ScheduleInput, ScheduleSeries } from '@/src/types';
@@ -158,8 +159,19 @@ export async function listSeries(db: SQLiteDatabase) {
   return rows.map(toSeries);
 }
 
-async function insertDuty(db: SQLiteDatabase, duty: ScheduledDuty) {
-  if (duty.scheduledEnd !== null) {
+async function insertDuty(db: SQLiteDatabase, duty: ScheduledDuty, original?: ScheduledDuty) {
+  const unchangedPlacement = original?.occurrenceDate === duty.occurrenceDate
+    && original.scheduledStart === duty.scheduledStart
+    && original.scheduledEnd === duty.scheduledEnd;
+  if (!unchangedPlacement) {
+    const dateTaken = await db.getFirstAsync<{ id: string }>(
+      'SELECT id FROM scheduled_duties WHERE id != ? AND occurrence_date = ? LIMIT 1',
+      duty.id,
+      duty.occurrenceDate,
+    );
+    if (dateTaken) throw new Error(DUTY_DATE_TAKEN_MESSAGE);
+  }
+  if (!unchangedPlacement && duty.scheduledEnd !== null) {
     const overlap = await db.getFirstAsync<{ id: string }>(
       `SELECT id FROM scheduled_duties
        WHERE id != ? AND scheduled_end IS NOT NULL
@@ -223,7 +235,9 @@ async function materializeSeries(db: SQLiteDatabase, series: ScheduleSeries, win
   );
   const excluded = new Set(exceptions.map((item) => item.occurrence_date));
   for (const duty of generateOccurrences(series, windowStart, windowEndExclusive)) {
-    if (!excluded.has(duty.occurrenceDate)) await insertDuty(db, duty);
+    if (excluded.has(duty.occurrenceDate)) continue;
+    const alreadyMaterialized = await db.getFirstAsync<{ id: string }>('SELECT id FROM scheduled_duties WHERE id = ?', duty.id);
+    if (!alreadyMaterialized) await insertDuty(db, duty);
   }
   const generatedThrough = series.generatedThrough && series.generatedThrough > windowEndExclusive
     ? series.generatedThrough
@@ -287,7 +301,7 @@ export async function saveSchedule(db: SQLiteDatabase, input: ScheduleInput) {
         note: input.note.trim(),
         updatedAt: now,
       };
-      await insertDuty(transaction, replacement);
+      await insertDuty(transaction, replacement, duty);
       await transaction.runAsync(
         `UPDATE scheduled_duties SET series_id = NULL, occurrence_date = ?, scheduled_start = ?, scheduled_end = ?,
          timezone = ?, break_seconds = ?, rate_override_type = ?, rate_override_minor = ?, needs_review = 0, note = ?, updated_at = ? WHERE id = ?`,
@@ -403,12 +417,6 @@ function dayAfter(value: string) {
   const date = parseLocalDate(value);
   date.setDate(date.getDate() + 1);
   return formatLocal(date);
-}
-
-function materializationEnd(series: ScheduleSeries) {
-  const rollingEnd = nextMaterializationEnd();
-  const configuredEnd = series.endDate ? dayAfter(series.endDate) : null;
-  return configuredEnd && configuredEnd < rollingEnd ? configuredEnd : rollingEnd;
 }
 
 function dayBefore(value: string) {

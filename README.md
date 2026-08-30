@@ -13,6 +13,16 @@ npm start
 
 Scan the QR code with Expo Go on Android, or run `npm run android` when an Android emulator is available.
 
+## Build a versioned APK
+
+Install the EAS CLI globally, sign in, and configure Android credentials once. Then run:
+
+```bash
+npm run build:apk
+```
+
+The production profile increments the remote Android `versionCode`. After EAS finishes, the command downloads the artifact as `dist/Ignis-<appVersion>-build-<versionCode>-release.apk`. The user-facing app version in `app.json` is changed only for deliberate releases.
+
 ## Web deployment
 
 The web app is deployed from `master` through Vercel. Vercel runs `npx expo export --platform web` and serves the generated `dist` directory; pull requests receive preview deployments. Vercel also supplies the cross-origin isolation headers required by the Expo SQLite web runtime.

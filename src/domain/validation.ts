@@ -1,4 +1,5 @@
-import { generateOccurrences, nextMaterializationEnd, parseLocalDate, scheduledRange, seriesFromInput } from '@/src/domain/schedule';
+import { blockingDutiesForSchedule, isDutyDateTaken, DUTY_DATE_TAKEN_MESSAGE } from '@/src/domain/duty-dates';
+import { generateOccurrences, materializationEnd, parseLocalDate, scheduledRange, seriesFromInput } from '@/src/domain/schedule';
 import { ScheduledDuty, ScheduleInput } from '@/src/types';
 
 function isValidLocalDate(value: string) {
@@ -32,19 +33,19 @@ export function validateScheduleInput(input: ScheduleInput, existing: ScheduledD
     if (!Number.isInteger(input.rateOverride.amountMinor) || input.rateOverride.amountMinor <= 0) return 'Rate override must be greater than zero.';
   }
 
-  const requestedPreviewEnd = input.endDate ? localTomorrow(input.endDate) : localTomorrow(input.startDate);
-  const previewEnd = requestedPreviewEnd < nextMaterializationEnd() ? requestedPreviewEnd : nextMaterializationEnd();
-  const preview = generateOccurrences(seriesFromInput(input, 'validation'), input.startDate, previewEnd);
+  const edited = input.dutyId ? existing.find((duty) => duty.id === input.dutyId) : undefined;
+  const blocking = blockingDutiesForSchedule(input, existing);
+  const series = seriesFromInput(input, 'validation');
+  const preview = generateOccurrences(series, input.startDate, materializationEnd(series));
   for (const duty of preview) {
-    if (duty.scheduledEnd && dutiesOverlap(duty.scheduledStart, duty.scheduledEnd, existing, input.dutyId)) {
+    const unchangedPlacement = edited?.occurrenceDate === duty.occurrenceDate
+      && edited.scheduledStart === duty.scheduledStart
+      && edited.scheduledEnd === duty.scheduledEnd;
+    if (unchangedPlacement) continue;
+    if (isDutyDateTaken(duty.occurrenceDate, blocking, input.dutyId)) return DUTY_DATE_TAKEN_MESSAGE;
+    if (duty.scheduledEnd && dutiesOverlap(duty.scheduledStart, duty.scheduledEnd, blocking, input.dutyId)) {
       return 'This schedule overlaps an existing duty.';
     }
   }
   return null;
-}
-
-function localTomorrow(value: string) {
-  const date = parseLocalDate(value);
-  date.setDate(date.getDate() + 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

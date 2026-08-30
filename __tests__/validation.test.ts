@@ -26,9 +26,20 @@ describe('schedule validation', () => {
     expect(validateScheduleInput({ ...base, recurrence: 'weekly' }, [])).toMatch(/weekday/i);
   });
 
-  test('rejects overlapping generated duties', () => {
+  test('rejects a second duty on the same date even when times do not overlap', () => {
     const existing = [duty('2026-08-25T09:00:00+08:00', '2026-08-25T17:00:00+08:00')];
-    expect(validateScheduleInput({ ...base, startMinutes: 16 * 60, endMinutes: 20 * 60 }, existing)).toMatch(/overlaps/i);
+    expect(validateScheduleInput({ ...base, startMinutes: 18 * 60, endMinutes: 20 * 60 }, existing)).toMatch(/already scheduled for this date/i);
+  });
+
+  test('keeps overlap protection across adjacent start dates', () => {
+    const existing = [duty('2026-08-24T22:00:00+08:00', '2026-08-25T06:00:00+08:00')];
+    expect(validateScheduleInput({ ...base, startMinutes: 5 * 60, endMinutes: 10 * 60 }, existing)).toMatch(/overlaps/i);
+  });
+
+  test('allows an unchanged grandfathered duty placement', () => {
+    const existingDuty = duty('2026-08-25T09:00:00+08:00', '2026-08-25T17:00:00+08:00', { id: 'edited' });
+    const duplicate = duty('2026-08-25T18:00:00+08:00', '2026-08-25T20:00:00+08:00', { id: 'legacy-duplicate' });
+    expect(validateScheduleInput({ ...base, dutyId: 'edited', note: 'Updated note' }, [existingDuty, duplicate])).toBeNull();
   });
 
   test('rejects a break as long as the duty', () => {

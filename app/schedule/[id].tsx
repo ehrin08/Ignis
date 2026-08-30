@@ -6,6 +6,8 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ActionButton, AppText, FormField, Screen, Segment } from '@/src/components/primitives';
+import { DutyDatePicker } from '@/src/components/duty-date-picker';
+import { takenDutyDates } from '@/src/domain/duty-dates';
 import { localDateKey } from '@/src/domain/format';
 import { wallClockDate } from '@/src/domain/schedule';
 import { validateScheduleInput } from '@/src/domain/validation';
@@ -67,7 +69,8 @@ export default function ScheduleEntryScreen() {
   );
   const [note, setNote] = useState(existing?.note ?? '');
   const [scope, setScope] = useState<ScheduleEditScope>('occurrence');
-  const [picker, setPicker] = useState<'date' | 'start' | 'end' | 'repeatEnd' | null>(null);
+  const [picker, setPicker] = useState<'start' | 'end' | 'repeatEnd' | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -123,17 +126,13 @@ export default function ScheduleEntryScreen() {
     setPicker(null);
     if (event.type !== 'set' || !selected || !active) return;
     setDirty(true);
-    if (active === 'date') setStartDate(localDateKey(selected));
     if (active === 'start') setStartTime(selected);
     if (active === 'end') setEndTime(selected);
     if (active === 'repeatEnd') setRepeatEndDate(localDateKey(selected));
   }
 
   async function persist() {
-    const validationDuties = input.scope === 'future' && input.seriesId && existing
-      ? duties.filter((duty) => !(duty.seriesId === input.seriesId && duty.occurrenceDate >= existing.occurrenceDate))
-      : duties;
-    const problem = validateScheduleInput(input, validationDuties);
+    const problem = validateScheduleInput(input, duties);
     if (problem) return setError(problem);
     setSaving(true);
     try {
@@ -276,7 +275,7 @@ export default function ScheduleEntryScreen() {
       ) : null}
 
       <View style={styles.pickerGrid}>
-        <DateCell label="Start date" value={formatDate(startDate)} onPress={() => setPicker('date')} />
+        <DateCell label="Start date" value={formatDate(startDate)} onPress={() => setDatePickerOpen(true)} />
         <DateCell label="Start time" value={formatTime(startTime)} onPress={() => setPicker('start')} />
         <DateCell label="End time" value={formatTime(endTime)} onPress={() => setPicker('end')} />
       </View>
@@ -332,11 +331,18 @@ export default function ScheduleEntryScreen() {
       ) : null}
 
       {existing ? <ActionButton kind="danger" label="Delete duty" onPress={confirmDelete} /> : null}
+      <DutyDatePicker
+        disabledDates={takenDutyDates(input, duties)}
+        onDismiss={() => setDatePickerOpen(false)}
+        onSelect={(date) => { setStartDate(date); setDatePickerOpen(false); setDirty(true); setError(null); }}
+        value={startDate}
+        visible={datePickerOpen}
+      />
       {picker ? <DateTimePicker
-        mode={picker === 'date' || picker === 'repeatEnd' ? 'date' : 'time'}
+        mode={picker === 'repeatEnd' ? 'date' : 'time'}
         minimumDate={picker === 'repeatEnd' ? new Date(`${startDate}T12:00:00`) : undefined}
         onChange={choosePicker}
-        value={picker === 'date' ? new Date(`${startDate}T12:00:00`) : picker === 'repeatEnd' ? new Date(`${repeatEndDate || startDate}T12:00:00`) : picker === 'start' ? startTime : endTime}
+        value={picker === 'repeatEnd' ? new Date(`${repeatEndDate || startDate}T12:00:00`) : picker === 'start' ? startTime : endTime}
       /> : null}
     </Screen>
   );

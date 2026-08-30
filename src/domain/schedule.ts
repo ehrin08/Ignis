@@ -126,3 +126,13 @@ export function seriesFromInput(input: ScheduleInput, id: string, createdAt = Da
 export function nextMaterializationEnd(reference = new Date()) {
   return localDateKey(addCalendarDays(reference, MATERIALIZATION_DAYS + 1));
 }
+
+export function materializationEnd(series: Pick<ScheduleSeries, 'startDate' | 'endDate'>, reference = new Date()) {
+  const firstOccurrenceEnd = localDateKey(addCalendarDays(parseLocalDate(series.startDate), 1));
+  const rollingEnd = nextMaterializationEnd(reference);
+  const effectiveHorizon = rollingEnd > firstOccurrenceEnd ? rollingEnd : firstOccurrenceEnd;
+  const configuredEnd = series.endDate
+    ? localDateKey(addCalendarDays(parseLocalDate(series.endDate), 1))
+    : null;
+  return configuredEnd && configuredEnd < effectiveHorizon ? configuredEnd : effectiveHorizon;
+}

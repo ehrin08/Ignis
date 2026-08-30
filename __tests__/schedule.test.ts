@@ -1,4 +1,4 @@
-import { generateOccurrences, scheduledRange, seriesFromInput, wallClockDate } from '@/src/domain/schedule';
+import { generateOccurrences, materializationEnd, scheduledRange, seriesFromInput, wallClockDate } from '@/src/domain/schedule';
 import { ScheduleInput } from '@/src/types';
 
 import { weeklySeries } from '@/test-utils/fixtures';
@@ -42,6 +42,10 @@ describe('schedule recurrence', () => {
   test('uses the series semantic timestamps for generated duties', () => {
     const duties = generateOccurrences({ ...weeklySeries, createdAt: 100, updatedAt: 250 }, '2026-08-24', '2026-08-31');
     expect(duties.every((duty) => duty.createdAt === 100 && duty.updatedAt === 250)).toBe(true);
+  });
+
+  test('materializes at least one occurrence for a far-future one-off duty', () => {
+    expect(materializationEnd({ startDate: '2030-04-15', endDate: '2030-04-15' }, new Date('2026-08-30T00:00:00Z'))).toBe('2030-04-16');
   });
 
   test('recovers the originating wall-clock time independently of the device timezone', () => {

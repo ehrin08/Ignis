@@ -197,4 +197,49 @@ describe('schedule repository contract', () => {
     expect(tombstones).toHaveLength(2);
     expect(tombstones.map((call) => call[2])).toEqual(['duty-1', 'duty-2']);
   });
+
+  test('rejects a new duty when its occurrence date is already taken', async () => {
+    const runs: unknown[][] = [];
+    const db = {
+      getFirstAsync: jest.fn(async (sql: string, ...parameters: unknown[]) => {
+        if (sql.includes('WHERE id = ?')) return null;
+        if (sql.includes('occurrence_date = ?') && parameters.includes('2030-04-15')) return { id: 'existing-duty' };
+        return null;
+      }),
+      getAllAsync: jest.fn(async () => []),
+      runAsync: jest.fn(async (...args: unknown[]) => { runs.push(args); }),
+      withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    };
+
+    await expect(saveSchedule(db as never, {
+      scope: 'occurrence', recurrence: 'once', startDate: '2030-04-15', endDate: null,
+      weekdayMask: [], startMinutes: 540, endMinutes: 1020, timezone: 'UTC', breakSeconds: 0,
+      rateOverride: null, note: '',
+    })).rejects.toThrow(/already scheduled for this date/i);
+    expect(runs.some((call) => String(call[0]).includes('INSERT OR IGNORE INTO scheduled_duties'))).toBe(false);
+  });
+
+  test('allows a non-placement edit to a grandfathered duplicate duty', async () => {
+    const start = Date.parse('2026-08-24T09:00:00.000Z');
+    const end = Date.parse('2026-08-24T17:00:00.000Z');
+    const dutyRow = {
+      id: 'duty-1', series_id: null, occurrence_date: '2026-08-24', scheduled_start: start,
+      scheduled_end: end, timezone: 'UTC', break_seconds: 0, rate_override_type: null,
+      rate_override_minor: null, status: 'pending', needs_review: 0, note: '', created_at: 90, updated_at: 90,
+    };
+    const calls: unknown[][] = [];
+    const db = {
+      getFirstAsync: jest.fn(async (sql: string) => sql.includes('FROM scheduled_duties WHERE id') ? dutyRow : null),
+      getAllAsync: jest.fn(async () => []),
+      runAsync: jest.fn(async (...args: unknown[]) => { calls.push(args); }),
+      withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
+    };
+
+    await expect(saveSchedule(db as never, {
+      dutyId: 'duty-1', scope: 'occurrence', recurrence: 'once', startDate: '2026-08-24', endDate: null,
+      weekdayMask: [], startMinutes: 540, endMinutes: 1020, timezone: 'UTC', breakSeconds: 0,
+      rateOverride: null, note: 'Updated note',
+    })).resolves.toBeUndefined();
+    expect(calls.some((call) => String(call[0]).includes('UPDATE scheduled_duties') && call.includes('Updated note'))).toBe(true);
+  });
 });
