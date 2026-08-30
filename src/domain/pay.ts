@@ -52,11 +52,15 @@ export function calculatePay(duties: ScheduledDuty[], settings: AppSettings): Pa
     const regular = settings.overtimeMode === 'none' ? seconds : Math.max(0, Math.min(seconds, threshold - consumed));
     const overtime = seconds - regular;
     bucketTotals.set(key, consumed + seconds);
-    const rate = duty.hourlyRateOverrideMinor ?? settings.hourlyRateMinor;
-    const nightSeconds = getNightSeconds(duty, settings);
-    const overtimePremium = overtime * ((settings.overtimeMultiplierBps - 10_000) / 10_000);
-    const nightPremium = nightSeconds * (settings.nightDifferentialBps / 10_000);
-    gross += ((regular + overtime + overtimePremium + nightPremium) / 3600) * rate;
+    if (duty.rateOverride?.type === 'day') {
+      gross += duty.rateOverride.amountMinor;
+    } else {
+      const rate = duty.rateOverride?.amountMinor ?? settings.hourlyRateMinor;
+      const nightSeconds = getNightSeconds(duty, settings);
+      const overtimePremium = overtime * ((settings.overtimeMultiplierBps - 10_000) / 10_000);
+      const nightPremium = nightSeconds * (settings.nightDifferentialBps / 10_000);
+      gross += ((regular + overtime + overtimePremium + nightPremium) / 3600) * rate;
+    }
     paidSeconds += seconds;
     regularSeconds += regular;
     overtimeSeconds += overtime;

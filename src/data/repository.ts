@@ -1,8 +1,9 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 
 import { generateOccurrences, nextMaterializationEnd, parseLocalDate, seriesFromInput, scheduledRange } from '@/src/domain/schedule';
+import { getOrCreateDeviceId } from '@/src/data/sync-state';
 import { runWriteTransaction } from '@/src/data/transactions';
-import { AppSettings, AttendanceStatus, ScheduledDuty, ScheduleEditScope, ScheduleInput, ScheduleSeries } from '@/src/types';
+import { AppSettings, AttendanceStatus, RateOverride, ScheduledDuty, ScheduleEditScope, ScheduleInput, ScheduleSeries } from '@/src/types';
 
 type SettingsRow = {
   onboarding_completed: number;
@@ -29,7 +30,8 @@ type SeriesRow = {
   end_minutes: number;
   timezone: string;
   break_seconds: number;
-  hourly_rate_override_minor: number | null;
+  rate_override_type: RateOverride['type'] | null;
+  rate_override_minor: number | null;
   note: string;
   generated_through: string | null;
   created_at: number;
@@ -44,13 +46,17 @@ type DutyRow = {
   scheduled_end: number | null;
   timezone: string;
   break_seconds: number;
-  hourly_rate_override_minor: number | null;
+  rate_override_type: RateOverride['type'] | null;
+  rate_override_minor: number | null;
   status: AttendanceStatus;
   needs_review: number;
   note: string;
   created_at: number;
   updated_at: number;
 };
+
+const toRateOverride = (type: RateOverride['type'] | null, amountMinor: number | null): RateOverride | null =>
+  type === null || amountMinor === null ? null : { type, amountMinor };
 
 const toSeries = (row: SeriesRow): ScheduleSeries => ({
   id: row.id,
@@ -62,7 +68,7 @@ const toSeries = (row: SeriesRow): ScheduleSeries => ({
   endMinutes: row.end_minutes,
   timezone: row.timezone,
   breakSeconds: row.break_seconds,
-  hourlyRateOverrideMinor: row.hourly_rate_override_minor,
+  rateOverride: toRateOverride(row.rate_override_type, row.rate_override_minor),
   note: row.note,
   generatedThrough: row.generated_through,
   createdAt: row.created_at,
@@ -77,7 +83,7 @@ const toDuty = (row: DutyRow): ScheduledDuty => ({
   scheduledEnd: row.scheduled_end,
   timezone: row.timezone,
   breakSeconds: row.break_seconds,
-  hourlyRateOverrideMinor: row.hourly_rate_override_minor,
+  rateOverride: toRateOverride(row.rate_override_type, row.rate_override_minor),
   status: row.status,
   needsReview: Boolean(row.needs_review),
   note: row.note,
@@ -167,8 +173,8 @@ async function insertDuty(db: SQLiteDatabase, duty: ScheduledDuty) {
   await db.runAsync(
     `INSERT OR IGNORE INTO scheduled_duties (
       id, series_id, occurrence_date, scheduled_start, scheduled_end, timezone,
-      break_seconds, hourly_rate_override_minor, status, needs_review, note, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      break_seconds, rate_override_type, rate_override_minor, status, needs_review, note, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     duty.id,
     duty.seriesId,
     duty.occurrenceDate,
@@ -176,7 +182,8 @@ async function insertDuty(db: SQLiteDatabase, duty: ScheduledDuty) {
     duty.scheduledEnd,
     duty.timezone,
     duty.breakSeconds,
-    duty.hourlyRateOverrideMinor,
+    duty.rateOverride?.type ?? null,
+    duty.rateOverride?.amountMinor ?? null,
     duty.status,
     duty.needsReview ? 1 : 0,
     duty.note,
@@ -189,8 +196,8 @@ async function insertSeries(db: SQLiteDatabase, series: ScheduleSeries) {
   await db.runAsync(
     `INSERT INTO schedule_series (
       id, recurrence, start_date, end_date, weekday_mask, start_minutes, end_minutes,
-      timezone, break_seconds, hourly_rate_override_minor, note, generated_through, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      timezone, break_seconds, rate_override_type, rate_override_minor, note, generated_through, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     series.id,
     series.recurrence,
     series.startDate,
@@ -200,7 +207,8 @@ async function insertSeries(db: SQLiteDatabase, series: ScheduleSeries) {
     series.endMinutes,
     series.timezone,
     series.breakSeconds,
-    series.hourlyRateOverrideMinor,
+    series.rateOverride?.type ?? null,
+    series.rateOverride?.amountMinor ?? null,
     series.note,
     series.generatedThrough,
     series.createdAt,
@@ -220,7 +228,19 @@ async function materializeSeries(db: SQLiteDatabase, series: ScheduleSeries, win
   const generatedThrough = series.generatedThrough && series.generatedThrough > windowEndExclusive
     ? series.generatedThrough
     : windowEndExclusive;
-  await db.runAsync('UPDATE schedule_series SET generated_through = ?, updated_at = ? WHERE id = ?', generatedThrough, Date.now(), series.id);
+  await db.runAsync('UPDATE schedule_series SET generated_through = ? WHERE id = ?', generatedThrough, series.id);
+}
+
+async function insertException(db: SQLiteDatabase, seriesId: string, occurrenceDate: string, updatedAt: number) {
+  await db.runAsync(
+    `INSERT INTO schedule_exceptions (series_id, occurrence_date, created_at, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(series_id, occurrence_date) DO UPDATE SET updated_at = MAX(updated_at, excluded.updated_at)`,
+    seriesId,
+    occurrenceDate,
+    updatedAt,
+    updatedAt,
+  );
 }
 
 export async function ensureDutyWindow(db: SQLiteDatabase, windowStart: string, windowEndExclusive: string) {
@@ -251,7 +271,7 @@ export async function saveSchedule(db: SQLiteDatabase, input: ScheduleInput) {
     const duty = toDuty(dutyRow);
     if (input.scope === 'occurrence' || !duty.seriesId) {
       if (duty.seriesId) {
-        await transaction.runAsync('INSERT OR IGNORE INTO schedule_exceptions (series_id, occurrence_date) VALUES (?, ?)', duty.seriesId, duty.occurrenceDate);
+        await insertException(transaction, duty.seriesId, duty.occurrenceDate, now);
       }
       const range = scheduledRange(input.startDate, input.startMinutes, input.endMinutes, input.timezone);
       const replacement: ScheduledDuty = {
@@ -262,7 +282,7 @@ export async function saveSchedule(db: SQLiteDatabase, input: ScheduleInput) {
         scheduledEnd: range.end,
         timezone: input.timezone,
         breakSeconds: input.breakSeconds,
-        hourlyRateOverrideMinor: input.hourlyRateOverrideMinor,
+        rateOverride: input.rateOverride,
         needsReview: false,
         note: input.note.trim(),
         updatedAt: now,
@@ -270,13 +290,14 @@ export async function saveSchedule(db: SQLiteDatabase, input: ScheduleInput) {
       await insertDuty(transaction, replacement);
       await transaction.runAsync(
         `UPDATE scheduled_duties SET series_id = NULL, occurrence_date = ?, scheduled_start = ?, scheduled_end = ?,
-         timezone = ?, break_seconds = ?, hourly_rate_override_minor = ?, needs_review = 0, note = ?, updated_at = ? WHERE id = ?`,
+         timezone = ?, break_seconds = ?, rate_override_type = ?, rate_override_minor = ?, needs_review = 0, note = ?, updated_at = ? WHERE id = ?`,
         replacement.occurrenceDate,
         replacement.scheduledStart,
         replacement.scheduledEnd,
         replacement.timezone,
         replacement.breakSeconds,
-        replacement.hourlyRateOverrideMinor,
+        replacement.rateOverride?.type ?? null,
+        replacement.rateOverride?.amountMinor ?? null,
         replacement.note,
         now,
         duty.id,
@@ -299,21 +320,13 @@ export async function saveSchedule(db: SQLiteDatabase, input: ScheduleInput) {
       now,
       duty.seriesId,
     );
-    await transaction.runAsync(
-      `DELETE FROM scheduled_duties WHERE series_id = ? AND occurrence_date >= ? AND status = 'pending'`,
-      duty.seriesId,
-      duty.occurrenceDate,
-    );
+    await deletePendingDuties(transaction, duty.seriesId, duty.occurrenceDate, now);
     const newId = `series-${now}-${Math.random().toString(36).slice(2, 8)}`;
     const newSeries = seriesFromInput({ ...input, startDate: preserveSelected ? dayAfter(duty.occurrenceDate) : input.startDate }, newId, now);
     await insertSeries(transaction, newSeries);
     for (const historicalDuty of decidedHistory) {
       if (historicalDuty.occurrence_date >= newSeries.startDate) {
-        await transaction.runAsync(
-          'INSERT OR IGNORE INTO schedule_exceptions (series_id, occurrence_date) VALUES (?, ?)',
-          newId,
-          historicalDuty.occurrence_date,
-        );
+        await insertException(transaction, newId, historicalDuty.occurrence_date, now);
       }
     }
     await materializeSeries(transaction, newSeries, newSeries.startDate, materializationEnd(newSeries));
@@ -331,6 +344,7 @@ export async function updateAttendance(db: SQLiteDatabase, dutyId: string, statu
 
 export async function deleteSchedule(db: SQLiteDatabase, dutyId: string, scope: ScheduleEditScope) {
   await runWriteTransaction(db, async (transaction) => {
+    const now = Date.now();
     const row = await transaction.getFirstAsync<DutyRow>('SELECT * FROM scheduled_duties WHERE id = ?', dutyId);
     if (!row) return;
     const duty = toDuty(row);
@@ -338,37 +352,51 @@ export async function deleteSchedule(db: SQLiteDatabase, dutyId: string, scope: 
       await transaction.runAsync(
         'UPDATE schedule_series SET end_date = ?, updated_at = ? WHERE id = ?',
         duty.status === 'pending' ? dayBefore(duty.occurrenceDate) : duty.occurrenceDate,
-        Date.now(),
+        now,
         duty.seriesId,
       );
-      await transaction.runAsync(
-        `DELETE FROM scheduled_duties WHERE series_id = ? AND occurrence_date >= ? AND status = 'pending'`,
-        duty.seriesId,
-        duty.occurrenceDate,
-      );
+      await deletePendingDuties(transaction, duty.seriesId, duty.occurrenceDate, now);
       return;
     }
     if (duty.seriesId) {
-      await transaction.runAsync('INSERT OR IGNORE INTO schedule_exceptions (series_id, occurrence_date) VALUES (?, ?)', duty.seriesId, duty.occurrenceDate);
-      await recordTombstone(transaction, 'exception', `${duty.seriesId}:${duty.occurrenceDate}`);
+      await insertException(transaction, duty.seriesId, duty.occurrenceDate, now);
     }
     await transaction.runAsync('DELETE FROM scheduled_duties WHERE id = ?', duty.id);
-    await recordTombstone(transaction, 'duty', duty.id);
+    await recordTombstone(transaction, 'duty', duty.id, now);
   });
 }
 
-async function recordTombstone(db: SQLiteDatabase, entityType: 'series' | 'duty' | 'exception', entityId: string) {
-  const device = await db.getFirstAsync<{ value: string }>("SELECT value FROM sync_state WHERE key = 'device_id'");
-  const deviceId = device?.value ?? `device-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  if (!device) await db.runAsync("INSERT INTO sync_state (key, value) VALUES ('device_id', ?)", deviceId);
+async function recordTombstone(
+  db: SQLiteDatabase,
+  entityType: 'series' | 'duty' | 'exception',
+  entityId: string,
+  deletedAt = Date.now(),
+) {
+  const deviceId = await getOrCreateDeviceId(db);
   await db.runAsync(
     `INSERT INTO sync_tombstones (entity_type, entity_id, deleted_at, device_id) VALUES (?, ?, ?, ?)
      ON CONFLICT(entity_type, entity_id) DO UPDATE SET deleted_at = excluded.deleted_at, device_id = excluded.device_id`,
     entityType,
     entityId,
-    Date.now(),
+    deletedAt,
     deviceId,
   );
+}
+
+async function deletePendingDuties(db: SQLiteDatabase, seriesId: string, fromDate: string, deletedAt: number) {
+  const rows = await db.getAllAsync<{ id: string }>(
+    `SELECT id FROM scheduled_duties
+     WHERE series_id = ? AND occurrence_date >= ? AND status = 'pending'`,
+    seriesId,
+    fromDate,
+  );
+  await db.runAsync(
+    `DELETE FROM scheduled_duties
+     WHERE series_id = ? AND occurrence_date >= ? AND status = 'pending'`,
+    seriesId,
+    fromDate,
+  );
+  for (const row of rows) await recordTombstone(db, 'duty', row.id, deletedAt);
 }
 
 function dayAfter(value: string) {

@@ -4,6 +4,11 @@ export type RecurrenceType = 'once' | 'daily' | 'weekly';
 export type AttendanceStatus = 'pending' | 'completed' | 'awol';
 export type ScheduleEditScope = 'occurrence' | 'future';
 
+export type RateOverride = {
+  type: 'hourly' | 'day';
+  amountMinor: number;
+};
+
 export type AppSettings = {
   onboardingCompleted: boolean;
   currencyCode: string;
@@ -29,7 +34,7 @@ export type ScheduleSeries = {
   endMinutes: number;
   timezone: string;
   breakSeconds: number;
-  hourlyRateOverrideMinor: number | null;
+  rateOverride: RateOverride | null;
   note: string;
   generatedThrough: string | null;
   createdAt: number;
@@ -44,7 +49,7 @@ export type ScheduledDuty = {
   scheduledEnd: number | null;
   timezone: string;
   breakSeconds: number;
-  hourlyRateOverrideMinor: number | null;
+  rateOverride: RateOverride | null;
   status: AttendanceStatus;
   needsReview: boolean;
   note: string;
@@ -82,6 +87,6 @@ export type ScheduleInput = {
   endMinutes: number;
   timezone: string;
   breakSeconds: number;
-  hourlyRateOverrideMinor: number | null;
+  rateOverride: RateOverride | null;
   note: string;
 };

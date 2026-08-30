@@ -45,6 +45,7 @@ app-example
 
 .vercel
 .env*
+!.env.example
 secret
 secret.*
 secrets/

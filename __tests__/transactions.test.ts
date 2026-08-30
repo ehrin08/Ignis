@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 import { runWriteTransaction } from '@/src/data/transactions';
 
 describe('runWriteTransaction', () => {
@@ -7,51 +5,52 @@ describe('runWriteTransaction', () => {
     jest.restoreAllMocks();
   });
 
-  test('uses a regular transaction with the original database on web', async () => {
-    jest.replaceProperty(Platform, 'OS', 'web');
+  test('uses withTransactionAsync on the primary database connection', async () => {
     const task = jest.fn(async () => undefined);
-    let db: {
-      withTransactionAsync: (callback: () => Promise<void>) => Promise<void>;
-      withExclusiveTransactionAsync: jest.Mock;
-    };
-    db = {
+    const db = {
       withTransactionAsync: jest.fn(async (callback) => callback()),
-      withExclusiveTransactionAsync: jest.fn(),
     };
 
     await runWriteTransaction(db as never, task);
 
     expect(db.withTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.withExclusiveTransactionAsync).not.toHaveBeenCalled();
     expect(task).toHaveBeenCalledWith(db);
   });
 
-  test('uses the exclusive transaction object on native platforms', async () => {
-    jest.replaceProperty(Platform, 'OS', 'android');
-    const transaction = { connection: 'exclusive' };
-    const task = jest.fn(async () => undefined);
+  test('serializes concurrent write transactions in sequence', async () => {
+    const executionOrder: number[] = [];
     const db = {
-      withTransactionAsync: jest.fn(),
-      withExclusiveTransactionAsync: jest.fn(async (callback: (value: unknown) => Promise<void>) => callback(transaction)),
+      withTransactionAsync: jest.fn(async (callback) => callback()),
     };
 
-    await runWriteTransaction(db as never, task);
+    const task1 = runWriteTransaction(db as never, async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      executionOrder.push(1);
+    });
+    const task2 = runWriteTransaction(db as never, async () => {
+      executionOrder.push(2);
+    });
 
-    expect(db.withExclusiveTransactionAsync).toHaveBeenCalledTimes(1);
-    expect(db.withTransactionAsync).not.toHaveBeenCalled();
-    expect(task).toHaveBeenCalledWith(transaction);
+    await Promise.all([task1, task2]);
+
+    expect(executionOrder).toEqual([1, 2]);
   });
 
-  test('propagates callback failures', async () => {
-    jest.replaceProperty(Platform, 'OS', 'web');
+  test('propagates callback failures without blocking subsequent transactions', async () => {
     const failure = new Error('write failed');
     const db = {
       withTransactionAsync: jest.fn(async (callback: () => Promise<void>) => callback()),
-      withExclusiveTransactionAsync: jest.fn(),
     };
 
-    await expect(runWriteTransaction(db as never, async () => {
-      throw failure;
-    })).rejects.toBe(failure);
+    await expect(
+      runWriteTransaction(db as never, async () => {
+        throw failure;
+      })
+    ).rejects.toBe(failure);
+
+    const followUp = jest.fn(async () => 'recovered');
+    const result = await runWriteTransaction(db as never, followUp);
+    expect(result).toBe('recovered');
+    expect(followUp).toHaveBeenCalledTimes(1);
   });
 });

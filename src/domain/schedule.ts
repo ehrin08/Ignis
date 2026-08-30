@@ -75,7 +75,6 @@ export function shouldOccur(series: Pick<ScheduleSeries, 'recurrence' | 'startDa
 
 export function generateOccurrences(series: ScheduleSeries, windowStart: string, windowEndExclusive: string): ScheduledDuty[] {
   const duties: ScheduledDuty[] = [];
-  const createdAt = Date.now();
   let cursor = parseLocalDate(windowStart < series.startDate ? series.startDate : windowStart);
   const windowEnd = parseLocalDate(windowEndExclusive);
   while (cursor < windowEnd) {
@@ -91,12 +90,12 @@ export function generateOccurrences(series: ScheduleSeries, windowStart: string,
         scheduledEnd: range.end,
         timezone: series.timezone,
         breakSeconds: series.breakSeconds,
-        hourlyRateOverrideMinor: series.hourlyRateOverrideMinor,
+        rateOverride: series.rateOverride,
         status: 'pending',
         needsReview: false,
         note: series.note,
-        createdAt,
-        updatedAt: createdAt,
+        createdAt: series.createdAt,
+        updatedAt: series.updatedAt,
       });
     }
     if (series.recurrence === 'once') break;
@@ -116,7 +115,7 @@ export function seriesFromInput(input: ScheduleInput, id: string, createdAt = Da
     endMinutes: input.endMinutes,
     timezone: input.timezone,
     breakSeconds: input.breakSeconds,
-    hourlyRateOverrideMinor: input.hourlyRateOverrideMinor,
+    rateOverride: input.rateOverride,
     note: input.note.trim(),
     generatedThrough: null,
     createdAt,

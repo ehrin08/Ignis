@@ -1,13 +1,27 @@
-import { Platform } from 'react-native';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-type TransactionTask = (transaction: SQLiteDatabase) => Promise<void>;
+type TransactionTask<T = void> = (transaction: SQLiteDatabase) => Promise<T>;
 
-export async function runWriteTransaction(db: SQLiteDatabase, task: TransactionTask) {
-  if (Platform.OS === 'web') {
-    await db.withTransactionAsync(() => task(db));
-    return;
-  }
+let writeQueue: Promise<unknown> = Promise.resolve();
 
-  await db.withExclusiveTransactionAsync(task);
+export async function runSerializedWrite<T>(task: () => Promise<T>): Promise<T> {
+  const nextTask = writeQueue.then(task, task);
+  writeQueue = nextTask.then(
+    () => {},
+    () => {}
+  );
+  return nextTask;
+}
+
+export async function runWriteTransaction<T = void>(
+  db: SQLiteDatabase,
+  task: TransactionTask<T>
+): Promise<T> {
+  return runSerializedWrite(async () => {
+    let result: T;
+    await db.withTransactionAsync(async () => {
+      result = await task(db);
+    });
+    return result!;
+  });
 }

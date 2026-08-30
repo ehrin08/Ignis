@@ -1,85 +1,151 @@
-import { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
+import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
 
+import { getOrCreateDeviceId, getSyncState, removeSyncState, setSyncState } from '@/src/data/sync-state';
 import { supabase } from '@/src/data/supabase';
-import { runWriteTransaction } from '@/src/data/transactions';
+import { runSerializedWrite, runWriteTransaction } from '@/src/data/transactions';
 
-type SyncSnapshot = {
+type JsonValue = string | number | boolean | null;
+type JsonRow = Record<string, JsonValue>;
+
+export type SyncSnapshot = {
   deviceId: string;
-  settings: Record<string, unknown> | null;
-  series: Record<string, unknown>[];
-  duties: Record<string, unknown>[];
-  exceptions: Record<string, unknown>[];
-  tombstones: Record<string, unknown>[];
+  settings: JsonRow | null;
+  series: JsonRow[];
+  duties: JsonRow[];
+  exceptions: JsonRow[];
+  tombstones: JsonRow[];
 };
 
-async function deviceId(db: SQLiteDatabase) {
-  const row = await db.getFirstAsync<{ value: string }>("SELECT value FROM sync_state WHERE key = 'device_id'");
-  if (row) return row.value;
-  const value = `device-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  await db.runAsync("INSERT INTO sync_state (key, value) VALUES ('device_id', ?)", value);
-  return value;
-}
+const SETTINGS_COLUMNS = [
+  'id', 'onboarding_completed', 'currency_code', 'hourly_rate_minor', 'pay_cycle_type',
+  'pay_cycle_anchor', 'overtime_mode', 'overtime_threshold_minutes', 'overtime_multiplier_bps',
+  'night_differential_bps', 'night_differential_start_minutes', 'night_differential_end_minutes',
+  'week_starts_on', 'updated_at',
+] as const;
+
+const SERIES_COLUMNS = [
+  'id', 'recurrence', 'start_date', 'end_date', 'weekday_mask', 'start_minutes', 'end_minutes',
+  'timezone', 'break_seconds', 'rate_override_type', 'rate_override_minor', 'note', 'created_at', 'updated_at',
+] as const;
+
+const DUTY_COLUMNS = [
+  'id', 'series_id', 'occurrence_date', 'scheduled_start', 'scheduled_end', 'timezone',
+  'break_seconds', 'rate_override_type', 'rate_override_minor', 'status', 'needs_review', 'note',
+  'created_at', 'updated_at',
+] as const;
+
+const EXCEPTION_COLUMNS = ['series_id', 'occurrence_date', 'created_at', 'updated_at'] as const;
+const TOMBSTONE_COLUMNS = ['entity_type', 'entity_id', 'deleted_at', 'device_id'] as const;
 
 export async function accountOwner(db: SQLiteDatabase) {
-  return (await db.getFirstAsync<{ value: string }>("SELECT value FROM sync_state WHERE key = 'owner_id'"))?.value ?? null;
+  return getSyncState(db, 'owner_id');
 }
 
-export async function prepareAccount(db: SQLiteDatabase, ownerId: string) {
-  const current = await accountOwner(db);
-  if (current && current !== ownerId) await clearAccountData(db);
-  await db.runAsync("INSERT INTO sync_state (key, value) VALUES ('owner_id', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", ownerId);
+async function clearAccountRows(db: SQLiteDatabase) {
+  await db.execAsync(`
+    DELETE FROM schedule_exceptions;
+    DELETE FROM scheduled_duties;
+    DELETE FROM schedule_series;
+    DELETE FROM settings;
+    DELETE FROM sync_tombstones;
+  `);
+  await removeSyncState(db, 'owner_id', 'last_sync_at');
 }
 
 export async function clearAccountData(db: SQLiteDatabase) {
-  await runWriteTransaction(db, async (tx) => {
-    await tx.execAsync(`DELETE FROM schedule_exceptions; DELETE FROM scheduled_duties; DELETE FROM schedule_series;
-      DELETE FROM settings; DELETE FROM sync_tombstones; DELETE FROM sync_state WHERE key = 'owner_id';`);
+  await runWriteTransaction(db, clearAccountRows);
+}
+
+async function createSnapshot(db: SQLiteDatabase): Promise<SyncSnapshot> {
+  const [settings, series, duties, exceptions, tombstones, deviceId] = await Promise.all([
+    db.getFirstAsync<JsonRow>(`SELECT ${SETTINGS_COLUMNS.join(', ')} FROM settings WHERE id = 1`),
+    db.getAllAsync<JsonRow>(`SELECT ${SERIES_COLUMNS.join(', ')} FROM schedule_series`),
+    db.getAllAsync<JsonRow>(`SELECT ${DUTY_COLUMNS.join(', ')} FROM scheduled_duties`),
+    db.getAllAsync<JsonRow>(`SELECT ${EXCEPTION_COLUMNS.join(', ')} FROM schedule_exceptions`),
+    db.getAllAsync<JsonRow>(`SELECT ${TOMBSTONE_COLUMNS.join(', ')} FROM sync_tombstones`),
+    getOrCreateDeviceId(db),
+  ]);
+  return { deviceId, settings, series, duties, exceptions, tombstones };
+}
+
+function values(row: JsonRow, columns: readonly string[]): SQLiteBindValue[] {
+  return columns.map((column) => row[column] as SQLiteBindValue);
+}
+
+async function insertRows(
+  db: SQLiteDatabase,
+  table: 'schedule_series' | 'scheduled_duties' | 'schedule_exceptions' | 'sync_tombstones',
+  rows: JsonRow[],
+  columns: readonly string[],
+) {
+  const placeholders = columns.map(() => '?').join(', ');
+  for (const row of rows) {
+    await db.runAsync(
+      `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`,
+      ...values(row, columns),
+    );
+  }
+}
+
+async function applyRemoteSnapshot(db: SQLiteDatabase, remote: SyncSnapshot, ownerId: string) {
+  await db.withTransactionAsync(async () => {
+    await db.execAsync(`
+      DELETE FROM schedule_exceptions;
+      DELETE FROM scheduled_duties;
+      DELETE FROM schedule_series;
+      DELETE FROM settings;
+      DELETE FROM sync_tombstones;
+    `);
+
+    if (remote.settings) {
+      await db.runAsync(
+        `INSERT INTO settings (${SETTINGS_COLUMNS.join(', ')})
+         VALUES (${SETTINGS_COLUMNS.map(() => '?').join(', ')})`,
+        ...values(remote.settings, SETTINGS_COLUMNS),
+      );
+    }
+    await insertRows(db, 'schedule_series', remote.series, SERIES_COLUMNS);
+    await insertRows(db, 'scheduled_duties', remote.duties, DUTY_COLUMNS);
+    await insertRows(db, 'schedule_exceptions', remote.exceptions, EXCEPTION_COLUMNS);
+    await insertRows(db, 'sync_tombstones', remote.tombstones, TOMBSTONE_COLUMNS);
+    await setSyncState(db, 'owner_id', ownerId);
+    await setSyncState(db, 'last_sync_at', String(Date.now()));
   });
 }
 
-async function snapshot(db: SQLiteDatabase): Promise<SyncSnapshot> {
-  const [settings, series, duties, exceptions, tombstones] = await Promise.all([
-    db.getFirstAsync<Record<string, unknown>>('SELECT * FROM settings WHERE id = 1'),
-    db.getAllAsync<Record<string, unknown>>('SELECT * FROM schedule_series'),
-    db.getAllAsync<Record<string, unknown>>('SELECT * FROM scheduled_duties'),
-    db.getAllAsync<Record<string, unknown>>('SELECT * FROM schedule_exceptions'),
-    db.getAllAsync<Record<string, unknown>>('SELECT * FROM sync_tombstones'),
-  ]);
-  return { deviceId: await deviceId(db), settings, series, duties, exceptions, tombstones };
+function isSnapshot(value: unknown): value is SyncSnapshot {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<SyncSnapshot>;
+  return (candidate.settings === null || typeof candidate.settings === 'object')
+    && Array.isArray(candidate.series)
+    && Array.isArray(candidate.duties)
+    && Array.isArray(candidate.exceptions)
+    && Array.isArray(candidate.tombstones);
 }
 
-/** Pushes the compact local snapshot and applies the server's canonical state atomically. */
-export async function syncAccount(db: SQLiteDatabase) {
+/** Merges the local snapshot and applies the server's canonical account state. */
+export async function syncAccount(db: SQLiteDatabase, ownerId: string) {
   if (!supabase) throw new Error('Cloud sync is not configured for this build.');
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) throw new Error('Sign in before syncing.');
-  await prepareAccount(db, sessionData.session.user.id);
-  const { data, error } = await supabase.rpc('sync_ignis_snapshot', { p_snapshot: await snapshot(db) });
-  if (error) throw error;
-  const remote = data as SyncSnapshot | null;
-  if (!remote) return;
-  await applyRemoteSnapshot(db, remote);
-  await db.runAsync("INSERT INTO sync_state (key, value) VALUES ('last_sync_at', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", String(Date.now()));
-}
+  const client = supabase;
 
-async function applyRemoteSnapshot(db: SQLiteDatabase, remote: SyncSnapshot) {
-  await runWriteTransaction(db, async (tx) => {
-    // The RPC has already merged timestamps and tombstones. Replacing local records avoids partial cross-device state.
-    await tx.execAsync('DELETE FROM schedule_exceptions; DELETE FROM scheduled_duties; DELETE FROM schedule_series; DELETE FROM settings; DELETE FROM sync_tombstones;');
-    if (remote.settings) {
-      const row = remote.settings;
-      const columns = Object.keys(row);
-      await tx.runAsync(`INSERT INTO settings (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`, ...columns.map((key) => row[key] as SQLiteBindValue));
+  return runSerializedWrite(async () => {
+    const currentOwner = await accountOwner(db);
+    if (currentOwner && currentOwner !== ownerId) {
+      await db.withTransactionAsync(() => clearAccountRows(db));
     }
-    for (const [table, rows] of [['schedule_series', remote.series], ['scheduled_duties', remote.duties], ['schedule_exceptions', remote.exceptions], ['sync_tombstones', remote.tombstones]] as const) {
-      for (const row of rows) {
-        const columns = Object.keys(row);
-        await tx.runAsync(`INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`, ...columns.map((key) => row[key] as SQLiteBindValue));
-      }
-    }
+    await setSyncState(db, 'owner_id', ownerId);
+
+    const { data, error } = await client.rpc('sync_ignis_snapshot', {
+      p_snapshot: await createSnapshot(db),
+    });
+    if (error) throw error;
+    if (!isSnapshot(data)) throw new Error('Cloud sync returned an invalid schedule snapshot.');
+
+    await applyRemoteSnapshot(db, data, ownerId);
+    return getSyncState(db, 'last_sync_at');
   });
 }
 
 export async function lastSyncAt(db: SQLiteDatabase) {
-  return (await db.getFirstAsync<{ value: string }>("SELECT value FROM sync_state WHERE key = 'last_sync_at'"))?.value ?? null;
+  return getSyncState(db, 'last_sync_at');
 }

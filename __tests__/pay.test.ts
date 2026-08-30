@@ -49,9 +49,52 @@ describe('scheduled duty pay calculation', () => {
   });
 
   test('uses a duty hourly-rate override without changing the default rate', () => {
-    const entry = duty('2026-08-24T09:00:00+08:00', '2026-08-24T17:00:00+08:00', { hourlyRateOverrideMinor: 3_000, status: 'completed' });
+    const entry = duty('2026-08-24T09:00:00+08:00', '2026-08-24T17:00:00+08:00', { rateOverride: { type: 'hourly', amountMinor: 3_000 }, status: 'completed' });
     expect(calculatePay([entry], { ...settings, nightDifferentialBps: 0 }).grossMinor).toBe(24_000);
     expect(settings.hourlyRateMinor).toBe(2_000);
+  });
+
+  test.each([
+    ['short', '2026-08-24T09:00:00+08:00', '2026-08-24T13:00:00+08:00'],
+    ['long', '2026-08-24T09:00:00+08:00', '2026-08-24T21:00:00+08:00'],
+    ['overnight', '2026-08-24T21:00:00+08:00', '2026-08-25T06:00:00+08:00'],
+  ])('pays one flat day rate for a %s duty without premiums', (_label, start, end) => {
+    const entry = duty(start, end, {
+      rateOverride: { type: 'day', amountMinor: 25_000 },
+      status: 'completed',
+    });
+    const result = calculatePay([entry], {
+      ...settings,
+      overtimeMode: 'daily',
+      overtimeThresholdMinutes: 60,
+      overtimeMultiplierBps: 20_000,
+      nightDifferentialBps: 10_000,
+    });
+    expect(result.grossMinor).toBe(25_000);
+  });
+
+  test('day-rate hours consume the overtime threshold for a later hourly duty', () => {
+    const entries = [
+      duty('2026-08-24T08:00:00+08:00', '2026-08-24T16:00:00+08:00', { rateOverride: { type: 'day', amountMinor: 12_000 } }),
+      duty('2026-08-24T17:00:00+08:00', '2026-08-24T19:00:00+08:00'),
+    ];
+    const result = calculatePay(entries, { ...settings, overtimeMode: 'daily', nightDifferentialBps: 0 });
+    expect(result.regularSeconds).toBe(8 * 3600);
+    expect(result.overtimeSeconds).toBe(2 * 3600);
+    expect(result.grossMinor).toBe(18_000);
+  });
+
+  test('allocates and summarizes mixed day-rate and hourly duties', () => {
+    const now = new Date('2026-08-24T12:00:00+08:00');
+    const entries = [
+      duty('2026-08-24T01:00:00+08:00', '2026-08-24T09:00:00+08:00', { rateOverride: { type: 'day', amountMinor: 10_000 }, status: 'completed' }),
+      duty('2026-08-25T09:00:00+08:00', '2026-08-25T17:00:00+08:00', { status: 'pending' }),
+    ];
+    const allocation = allocateDutyGross(entries, { ...settings, nightDifferentialBps: 0 });
+    expect([...allocation.values()]).toEqual([10_000, 16_000]);
+    const summary = calculateDashboardSummary(entries, { ...settings, nightDifferentialBps: 0 }, getPayPeriod(now, settings), now);
+    expect(summary.earned.grossMinor).toBe(10_000);
+    expect(summary.projected.grossMinor).toBe(26_000);
   });
 
   test('completed earns, future pending projects, AWOL and overdue pending pay zero', () => {

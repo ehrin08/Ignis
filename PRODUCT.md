@@ -31,7 +31,7 @@ Ignis is a schedule-first attendance ledger: the rota, attendance decision, over
 
 ## Capabilities and Constraints
 
-- Offline-first local storage; no account, cloud sync, server, notifications, or team features.
+- Offline-first local storage remains fully usable without an account; optional Google accounts add private Supabase backup and multi-device sync, with no notifications or team features.
 - One-off, daily, and selected-weekday recurring schedules with optional end dates.
 - Pending, Completed, and AWOL duty states; corrections require confirmation.
 - Scheduled duration minus unpaid break is authoritative; there is no live clock or partial-attendance model.

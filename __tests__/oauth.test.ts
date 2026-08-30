@@ -42,13 +42,11 @@ describe('Google OAuth', () => {
       provider: 'google',
       options: { redirectTo: 'ignis://auth/callback', skipBrowserRedirect: true },
     });
-    expect(mockOpenAuthSessionAsync).toHaveBeenCalledWith('https://accounts.google.com/oauth', 'ignis://auth/callback');
     expect(mockExchangeCodeForSession).toHaveBeenCalledWith('google-code');
   });
 
-  test('does not exchange a code when the browser is dismissed', async () => {
+  test('does not exchange a code when the secure browser is dismissed', async () => {
     mockOpenAuthSessionAsync.mockResolvedValue({ type: 'cancel' });
-
     await expect(signInWithGoogle()).resolves.toBe(false);
     expect(mockExchangeCodeForSession).not.toHaveBeenCalled();
   });

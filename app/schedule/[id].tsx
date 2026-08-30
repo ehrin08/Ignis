@@ -1,10 +1,9 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, usePreventRemove } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ActionButton, AppText, FormField, Screen, Segment } from '@/src/components/primitives';
 import { localDateKey } from '@/src/domain/format';
@@ -12,8 +11,9 @@ import { wallClockDate } from '@/src/domain/schedule';
 import { validateScheduleInput } from '@/src/domain/validation';
 import { useLiveNow } from '@/src/hooks/use-live-now';
 import { useAppData } from '@/src/providers/app-provider';
+import { useConfirm, useDialog, useToast } from '@/src/providers/feedback-provider';
 import { radii, spacing, useIgnisTheme } from '@/src/theme/tokens';
-import { AttendanceStatus, RecurrenceType, ScheduleEditScope, ScheduleInput } from '@/src/types';
+import { AttendanceStatus, RateOverride, RecurrenceType, ScheduleEditScope, ScheduleInput } from '@/src/types';
 
 const recurrenceOptions: { value: RecurrenceType; label: string }[] = [
   { value: 'once', label: 'One-off' },
@@ -26,10 +26,17 @@ const scopeOptions: { value: ScheduleEditScope; label: string }[] = [
 ];
 const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const standardBreakMinutes = [30, 60, 120] as const;
+const rateOverrideOptions: { value: RateOverride['type']; label: string }[] = [
+  { value: 'hourly', label: 'Hourly rate' },
+  { value: 'day', label: 'Day rate' },
+];
 
 export default function ScheduleEntryScreen() {
   const theme = useIgnisTheme();
   const navigation = useNavigation();
+  const confirm = useConfirm();
+  const { showChoice } = useDialog();
+  const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { deleteSchedule, duties, saveSchedule, series, setAttendance } = useAppData();
   const now = useLiveNow(true, 60_000);
@@ -41,7 +48,9 @@ export default function ScheduleEntryScreen() {
     [existing],
   );
   const initialEnd = useMemo(
-    () => existing?.scheduledEnd ? wallClockDate(existing.scheduledEnd, existing.timezone) : new Date(initialStart.getTime() + 8 * 3_600_000),
+    () => existing?.scheduledEnd
+      ? wallClockDate(existing.scheduledEnd, existing.timezone)
+      : new Date(initialStart.getTime() + 8 * 60 * 60 * 1000),
     [existing, initialStart],
   );
   const [startDate, setStartDate] = useState(existing?.occurrenceDate ?? localDateKey(initialStart));
@@ -51,10 +60,11 @@ export default function ScheduleEntryScreen() {
   const [recurrence, setRecurrence] = useState<RecurrenceType>(existingSeries?.recurrence ?? 'once');
   const [weekdayMask, setWeekdayMask] = useState(existingSeries?.weekdayMask ?? [initialStart.getDay()]);
   const [breakMinutes, setBreakMinutes] = useState(existing ? Math.round(existing.breakSeconds / 60) : 30);
-  const [hourlyRateOverride, setHourlyRateOverride] = useState(() => {
-    const value = existing?.hourlyRateOverrideMinor ?? existingSeries?.hourlyRateOverrideMinor;
-    return value === null || value === undefined ? '' : (value / 100).toString();
-  });
+  const initialRateOverride = existing?.rateOverride ?? existingSeries?.rateOverride;
+  const [rateOverrideType, setRateOverrideType] = useState<RateOverride['type']>(initialRateOverride?.type ?? 'hourly');
+  const [rateOverrideAmount, setRateOverrideAmount] = useState(() =>
+    initialRateOverride === null || initialRateOverride === undefined ? '' : (initialRateOverride.amountMinor / 100).toString(),
+  );
   const [note, setNote] = useState(existing?.note ?? '');
   const [scope, setScope] = useState<ScheduleEditScope>('occurrence');
   const [picker, setPicker] = useState<'date' | 'start' | 'end' | 'repeatEnd' | null>(null);
@@ -63,12 +73,19 @@ export default function ScheduleEntryScreen() {
   const [dirty, setDirty] = useState(false);
   const allowExit = useRef(false);
 
-  usePreventRemove(dirty, ({ data }) => {
+  usePreventRemove(dirty, async ({ data }) => {
     if (allowExit.current) return navigation.dispatch(data.action);
-    Alert.alert('Discard unsaved changes?', 'Your schedule edits have not been saved.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => { allowExit.current = true; navigation.dispatch(data.action); } },
-    ]);
+    const confirmed = await confirm({
+      title: 'Discard unsaved changes?',
+      message: 'Your schedule edits have not been saved.',
+      confirmText: 'Discard',
+      cancelText: 'Keep editing',
+      destructive: true,
+    });
+    if (confirmed) {
+      allowExit.current = true;
+      navigation.dispatch(data.action);
+    }
   });
 
   if (!isNew && !existing) {
@@ -94,7 +111,10 @@ export default function ScheduleEntryScreen() {
     endMinutes: endTime.getHours() * 60 + endTime.getMinutes(),
     timezone: existing?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     breakSeconds: breakMinutes * 60,
-    hourlyRateOverrideMinor: hourlyRateOverride.trim() === '' ? null : Math.round(Number(hourlyRateOverride.replace(',', '.')) * 100),
+    rateOverride: rateOverrideAmount.trim() === '' ? null : {
+      type: rateOverrideType,
+      amountMinor: Math.round(Number(rateOverrideAmount.replace(',', '.')) * 100),
+    },
     note,
   };
 
@@ -118,66 +138,98 @@ export default function ScheduleEntryScreen() {
     setSaving(true);
     try {
       await saveSchedule(input);
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       allowExit.current = true;
+      toast.success(isNew ? 'Schedule entry created.' : 'Duty updated.', 'Schedule Saved');
       router.back();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'The schedule could not be saved.');
+      const msg = cause instanceof Error ? cause.message : 'The schedule could not be saved.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
   }
 
-  function save() {
+  async function save() {
     if (existing?.status === 'completed' && dirty) {
-      Alert.alert('Change completed duty?', 'This changes historical earned-pay estimates.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Save change', onPress: persist },
-      ]);
-      return;
+      const confirmed = await confirm({
+        title: 'Change completed duty?',
+        message: 'This changes historical earned-pay estimates.',
+        confirmText: 'Save change',
+        cancelText: 'Cancel',
+      });
+      if (!confirmed) return;
     }
     persist();
   }
 
-  function changeAttendance(status: AttendanceStatus) {
+  async function changeAttendance(status: AttendanceStatus) {
     if (!existing || existing.status === status) return;
-    Alert.alert('Correct attendance status?', `Change this duty from ${existing.status} to ${status}? Estimated gross pay will be recalculated.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Change status', style: status === 'awol' ? 'destructive' : 'default', onPress: async () => {
-        try {
-          await setAttendance(existing.id, status);
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch (cause) {
-          setError(cause instanceof Error ? cause.message : 'Attendance could not be updated.');
-        }
-      } },
-    ]);
+    const isAwol = status === 'awol';
+    const confirmed = await confirm({
+      title: 'Correct attendance status?',
+      message: `Change this duty from ${existing.status} to ${status}? Estimated gross pay will be recalculated.`,
+      confirmText: 'Change status',
+      destructive: isAwol,
+    });
+    if (!confirmed) return;
+
+    try {
+      await setAttendance(existing.id, status);
+      toast.success(`Duty status changed to ${status}.`, 'Attendance Updated');
+    } catch (cause) {
+      const msg = cause instanceof Error ? cause.message : 'Attendance could not be updated.';
+      setError(msg);
+      toast.error(msg);
+    }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!existing) return;
     const remove = async (selectedScope: ScheduleEditScope) => {
       try {
         await deleteSchedule(existing.id, selectedScope);
         allowExit.current = true;
+        toast.success(
+          selectedScope === 'future' ? 'Recurring schedule removed.' : 'Scheduled duty deleted.',
+          'Schedule Updated'
+        );
         router.back();
       } catch {
-        setError('The duty could not be deleted. Try again.');
+        const msg = 'The duty could not be deleted. Try again.';
+        setError(msg);
+        toast.error(msg);
       }
     };
+
     if (existing.seriesId) {
       const seriesHistory = existing.status === 'pending' ? '' : ' This + future preserves duties whose attendance is already decided.';
-      Alert.alert('Delete scheduled duty?', `Choose how much of the recurring schedule to remove.${seriesHistory}`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'This duty', onPress: () => remove('occurrence') },
-        { text: 'This + future', style: 'destructive', onPress: () => remove('future') },
-      ]);
+      const choice = await showChoice<ScheduleEditScope | 'cancel'>({
+        title: 'Delete scheduled duty?',
+        message: `Choose how much of the recurring schedule to remove.${seriesHistory}`,
+        buttons: [
+          { text: 'This duty only', value: 'occurrence', kind: 'outlined' },
+          { text: 'This + future duties', value: 'future', kind: 'danger' },
+          { text: 'Cancel', value: 'cancel', style: 'cancel' },
+        ],
+        dismissValue: 'cancel',
+      });
+
+      if (choice && choice !== 'cancel') {
+        await remove(choice);
+      }
     } else {
       const historyWarning = existing.status === 'pending' ? '' : ' This removes decided attendance history and changes estimates.';
-      Alert.alert('Delete this duty?', `This cannot be undone.${historyWarning}`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => remove('occurrence') },
-      ]);
+      const confirmed = await confirm({
+        title: 'Delete this duty?',
+        message: `This cannot be undone.${historyWarning}`,
+        confirmText: 'Delete',
+        destructive: true,
+      });
+
+      if (confirmed) {
+        await remove('occurrence');
+      }
     }
   }
 
@@ -248,13 +300,21 @@ export default function ScheduleEntryScreen() {
         />
         {standardBreakMinutes.includes(breakMinutes as 30 | 60 | 120) ? null : <AppText variant="muted">Existing break: {breakMinutes} minutes. Choose a preset to replace it.</AppText>}
       </View>
-      <FormField
-        keyboardType="decimal-pad"
-        label="Hourly rate override (optional)"
-        onChangeText={(value) => { setHourlyRateOverride(value); setDirty(true); }}
-        placeholder="Use default hourly rate"
-        value={hourlyRateOverride}
-      />
+      <View style={styles.fieldGroup}>
+        <AppText variant="label">Rate override (optional)</AppText>
+        <Segment
+          onChange={(value) => { setRateOverrideType(value); setDirty(true); }}
+          options={rateOverrideOptions}
+          value={rateOverrideType}
+        />
+        <FormField
+          keyboardType="decimal-pad"
+          label={rateOverrideType === 'day' ? 'Day rate' : 'Hourly rate'}
+          onChangeText={(value) => { setRateOverrideAmount(value); setDirty(true); }}
+          placeholder={rateOverrideType === 'day' ? 'Enter flat rate per duty' : 'Use default hourly rate'}
+          value={rateOverrideAmount}
+        />
+      </View>
       <FormField label="Note (optional)" multiline onChangeText={(value) => { setNote(value); setDirty(true); }} placeholder="Training, location, duty type…" value={note} />
 
       {error ? <AppText style={{ color: theme.colors.danger }}>{error}</AppText> : null}

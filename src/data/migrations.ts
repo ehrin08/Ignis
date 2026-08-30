@@ -6,6 +6,7 @@ import { runWriteTransaction } from '@/src/data/transactions';
 export async function migrateDatabase(db: SQLiteDatabase) {
   await db.execAsync('PRAGMA journal_mode = WAL;');
   await db.execAsync('PRAGMA foreign_keys = ON;');
+  await db.execAsync('PRAGMA busy_timeout = 5000;');
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const version = row?.user_version ?? 0;
 
@@ -161,6 +162,38 @@ export async function migrateDatabase(db: SQLiteDatabase) {
           PRIMARY KEY (entity_type, entity_id)
         );
         PRAGMA user_version = 4;
+      `);
+    });
+  }
+
+  if (version < 5) {
+    await runWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        ALTER TABLE schedule_series ADD COLUMN rate_override_type TEXT CHECK (rate_override_type IN ('hourly', 'day'));
+        ALTER TABLE schedule_series ADD COLUMN rate_override_minor INTEGER CHECK (rate_override_minor > 0);
+        ALTER TABLE scheduled_duties ADD COLUMN rate_override_type TEXT CHECK (rate_override_type IN ('hourly', 'day'));
+        ALTER TABLE scheduled_duties ADD COLUMN rate_override_minor INTEGER CHECK (rate_override_minor > 0);
+        UPDATE schedule_series
+          SET rate_override_type = 'hourly', rate_override_minor = hourly_rate_override_minor
+          WHERE hourly_rate_override_minor > 0;
+        UPDATE scheduled_duties
+          SET rate_override_type = 'hourly', rate_override_minor = hourly_rate_override_minor
+          WHERE hourly_rate_override_minor > 0;
+        PRAGMA user_version = 5;
+      `);
+    });
+  }
+
+  if (version < 6) {
+    await runWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        ALTER TABLE schedule_exceptions ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE schedule_exceptions ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;
+        UPDATE schedule_exceptions
+          SET created_at = CAST(strftime('%s', 'now') AS INTEGER) * 1000,
+              updated_at = CAST(strftime('%s', 'now') AS INTEGER) * 1000
+          WHERE created_at = 0 OR updated_at = 0;
+        PRAGMA user_version = 6;
       `);
     });
   }

@@ -13,7 +13,7 @@ const base: ScheduleInput = {
   endMinutes: 17 * 60,
   timezone: 'Asia/Manila',
   breakSeconds: 0,
-  hourlyRateOverrideMinor: null,
+  rateOverride: null,
   note: '',
 };
 
@@ -38,5 +38,10 @@ describe('schedule validation', () => {
   test('rejects invalid and reversed recurrence dates', () => {
     expect(validateScheduleInput({ ...base, startDate: '2026-02-30' }, [])).toMatch(/valid start/i);
     expect(validateScheduleInput({ ...base, recurrence: 'daily', endDate: '2026-08-20' }, [])).toMatch(/before/i);
+  });
+
+  test('rejects invalid rate overrides', () => {
+    expect(validateScheduleInput({ ...base, rateOverride: { type: 'day', amountMinor: 0 } }, [])).toMatch(/greater than zero/i);
+    expect(validateScheduleInput({ ...base, rateOverride: { type: 'shift', amountMinor: 10_000 } } as never, [])).toMatch(/valid rate override type/i);
   });
 });

@@ -24,13 +24,24 @@ describe('schedule recurrence', () => {
     const input: ScheduleInput = {
       scope: 'occurrence', recurrence: 'daily', startDate: '2026-03-07', endDate: '2026-03-10',
       weekdayMask: [], startMinutes: 9 * 60, endMinutes: 17 * 60, timezone: 'America/New_York', breakSeconds: 0, note: '',
-      hourlyRateOverrideMinor: null,
+      rateOverride: null,
     };
     const duties = generateOccurrences(seriesFromInput(input, 'dst'), '2026-03-07', '2026-03-11');
     expect(duties).toHaveLength(4);
     expect(new Date(duties[0].scheduledStart).toISOString()).toBe('2026-03-07T14:00:00.000Z');
     expect(new Date(duties[1].scheduledStart).toISOString()).toBe('2026-03-08T13:00:00.000Z');
     expect(duties.every((duty) => duty.scheduledEnd! - duty.scheduledStart === 8 * 3_600_000)).toBe(true);
+  });
+
+  test('copies a rate override to each generated duty', () => {
+    const rateOverride = { type: 'day' as const, amountMinor: 18_000 };
+    const duties = generateOccurrences({ ...weeklySeries, rateOverride }, '2026-08-24', '2026-08-31');
+    expect(duties.map((duty) => duty.rateOverride)).toEqual([rateOverride, rateOverride, rateOverride]);
+  });
+
+  test('uses the series semantic timestamps for generated duties', () => {
+    const duties = generateOccurrences({ ...weeklySeries, createdAt: 100, updatedAt: 250 }, '2026-08-24', '2026-08-31');
+    expect(duties.every((duty) => duty.createdAt === 100 && duty.updatedAt === 250)).toBe(true);
   });
 
   test('recovers the originating wall-clock time independently of the device timezone', () => {

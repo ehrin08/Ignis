@@ -6,10 +6,9 @@ FIRST VIEWPORT: Paired totals, one strong next-duty instrument, and the first re
 FORM: Clockwork Ledger / Schedule Rail, evolved from approved candidate 4 and seed 1a99c130.
 */
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { Href, router } from 'expo-router';
 import { ReactNode, useMemo } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DutyRow } from '@/src/components/duty-row';
 import { BrandMark } from '@/src/components/brand-mark';
@@ -19,12 +18,15 @@ import { allocateDutyGross, calculateDashboardSummary } from '@/src/domain/pay';
 import { getPayPeriod, isInPeriod } from '@/src/domain/periods';
 import { useLiveNow } from '@/src/hooks/use-live-now';
 import { useAppData } from '@/src/providers/app-provider';
+import { useConfirm, useToast } from '@/src/providers/feedback-provider';
 import { radii, spacing, useIgnisTheme } from '@/src/theme/tokens';
 import { AttendanceStatus, ScheduledDuty } from '@/src/types';
 
 export default function TodayScreen() {
   const theme = useIgnisTheme();
   const { duties, error, refresh, setAttendance, settings } = useAppData();
+  const confirm = useConfirm();
+  const toast = useToast();
   const now = useLiveNow(true, 60_000);
   const date = useMemo(() => new Date(now), [now]);
   const todayKey = localDateKey(date);
@@ -45,28 +47,28 @@ export default function TodayScreen() {
   const today = duties.filter((duty) => duty.occurrenceDate === todayKey && !overdue.some((item) => item.id === duty.id));
   const next = duties.find((duty) => duty.status === 'pending' && duty.scheduledStart > now && duty.scheduledEnd !== null) ?? null;
 
-  function confirmAttendance(duty: ScheduledDuty, status: AttendanceStatus) {
-    Alert.alert(
-      status === 'completed' ? 'Mark duty completed?' : 'Mark duty AWOL?',
-      status === 'completed'
+  async function confirmAttendance(duty: ScheduledDuty, status: AttendanceStatus) {
+    const isCompleted = status === 'completed';
+    const confirmed = await confirm({
+      title: isCompleted ? 'Mark duty completed?' : 'Mark duty AWOL?',
+      message: isCompleted
         ? 'Its scheduled paid time will move into earned gross pay.'
         : 'This duty will contribute zero earned pay.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: status === 'completed' ? 'Complete' : 'Mark AWOL',
-          style: status === 'awol' ? 'destructive' : 'default',
-          onPress: async () => {
-            try {
-              await setAttendance(duty.id, status);
-              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch {
-              // Provider exposes the actionable database error in the banner.
-            }
-          },
-        },
-      ],
-    );
+      confirmText: isCompleted ? 'Complete' : 'Mark AWOL',
+      destructive: !isCompleted,
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await setAttendance(duty.id, status);
+      toast.success(
+        isCompleted ? 'Duty marked completed. Gross pay updated.' : 'Duty marked AWOL.',
+        'Attendance Updated'
+      );
+    } catch {
+      toast.error('Could not update attendance. Try again.');
+    }
   }
 
   return (
