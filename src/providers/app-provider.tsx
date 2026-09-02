@@ -38,6 +38,7 @@ type AppData = {
   duties: ScheduledDuty[];
   series: ScheduleSeries[];
   refresh: () => Promise<void>;
+  syncAndRefresh: () => Promise<void>;
   ensureWindow: (start: Date, end: Date) => Promise<void>;
   saveSettings: (settings: AppSettings) => Promise<void>;
   saveSchedule: (input: ScheduleInput) => Promise<void>;
@@ -227,6 +228,22 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     if (authError) throw authError;
   }, [db, refresh]);
 
+  const syncAndRefresh = useCallback(async () => {
+    let cloudError: Error | null = null;
+    if (session) {
+      try {
+        await syncNow();
+        return;
+      } catch (err) {
+        cloudError = err instanceof Error ? err : new Error('Cloud sync could not complete.');
+      }
+    }
+    await refresh();
+    if (cloudError) {
+      throw cloudError;
+    }
+  }, [refresh, session, syncNow]);
+
   const deleteAccount = useCallback(async () => {
     if (!supabase || !session) throw new Error('Sign in before deleting an account.');
     if (syncTimer.current) clearTimeout(syncTimer.current);
@@ -248,6 +265,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     duties,
     series,
     refresh,
+    syncAndRefresh,
     ensureWindow,
     saveSettings: async (next) => runMutation(() => saveSettingsRecord(db, next)),
     saveSchedule: async (input) => runMutation(() => saveScheduleRecord(db, input)),
@@ -263,7 +281,7 @@ export function AppDataProvider({ children }: PropsWithChildren) {
     syncNow,
     signOut,
     deleteAccount,
-  }), [db, deleteAccount, duties, ensureWindow, error, lastSyncedAt, loading, refresh, runMutation, series, session, settings, signOut, syncError, syncNow, syncStatus]);
+  }), [db, deleteAccount, duties, ensureWindow, error, lastSyncedAt, loading, refresh, runMutation, series, session, settings, signOut, syncAndRefresh, syncError, syncNow, syncStatus]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

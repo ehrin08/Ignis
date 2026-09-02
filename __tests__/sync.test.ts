@@ -65,4 +65,14 @@ describe('account sync', () => {
 
     expect(execStatements.join('\n')).toContain('DELETE FROM scheduled_duties');
   });
+
+  test('propagates errors when snapshot sync fails', async () => {
+    const { db } = databaseDouble();
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: new Error('Network offline'),
+    });
+
+    await expect(syncAccount(db as never, 'user-1')).rejects.toThrow('Network offline');
+  });
 });

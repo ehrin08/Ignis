@@ -1,8 +1,9 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { PropsWithChildren, ReactNode } from 'react';
+import { PropsWithChildren, ReactNode, useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleProp,
   StyleSheet,
@@ -17,16 +18,61 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { displayFont, displayFontStrong, radii, spacing, useIgnisTheme } from '@/src/theme/tokens';
 
-export function Screen({ children, scroll = false, contentStyle }: PropsWithChildren<{ scroll?: boolean; contentStyle?: StyleProp<ViewStyle> }>) {
+export type ScreenProps = PropsWithChildren<{
+  scroll?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
+  onRefresh?: () => Promise<void> | void;
+  refreshing?: boolean;
+  testID?: string;
+}>;
+
+export function Screen({
+  children,
+  scroll = false,
+  contentStyle,
+  onRefresh,
+  refreshing: controlledRefreshing,
+  testID,
+}: ScreenProps) {
   const theme = useIgnisTheme();
+  const [internalRefreshing, setInternalRefreshing] = useState(false);
+  const isRefreshing = controlledRefreshing ?? internalRefreshing;
+
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh) return;
+    if (controlledRefreshing === undefined) {
+      setInternalRefreshing(true);
+      try {
+        await onRefresh();
+      } finally {
+        setInternalRefreshing(false);
+      }
+    } else {
+      await onRefresh();
+    }
+  }, [controlledRefreshing, onRefresh]);
+
+  const refreshControl = onRefresh ? (
+    <RefreshControl
+      colors={[theme.colors.accent]}
+      tintColor={theme.colors.accent}
+      progressBackgroundColor={theme.colors.surfaceRaised}
+      refreshing={isRefreshing}
+      onRefresh={handleRefresh}
+      testID="screen-refresh-control"
+    />
+  ) : undefined;
+
   const body = scroll ? (
     <ScrollView
       contentContainerStyle={[styles.scrollContent, contentStyle]}
       keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}>
+      refreshControl={refreshControl}
+      showsVerticalScrollIndicator={false}
+      testID={testID ?? 'screen-scroll-view'}>
       {children}
     </ScrollView>
-  ) : <View style={[styles.content, contentStyle]}>{children}</View>;
+  ) : <View style={[styles.content, contentStyle]} testID={testID}>{children}</View>;
   return <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: theme.colors.background }]}>{body}</SafeAreaView>;
 }
 

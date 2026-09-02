@@ -7,7 +7,7 @@ FORM: Clockwork Ledger / Schedule Rail, evolved from approved candidate 4 and se
 */
 import { MaterialIcons } from '@expo/vector-icons';
 import { Href, router } from 'expo-router';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DutyRow } from '@/src/components/duty-row';
@@ -24,7 +24,7 @@ import { AttendanceStatus, ScheduledDuty } from '@/src/types';
 
 export default function TodayScreen() {
   const theme = useIgnisTheme();
-  const { duties, error, refresh, setAttendance, settings } = useAppData();
+  const { duties, error, refresh, setAttendance, settings, syncAndRefresh } = useAppData();
   const confirm = useConfirm();
   const toast = useToast();
   const now = useLiveNow(true, 60_000);
@@ -46,6 +46,14 @@ export default function TodayScreen() {
   const overdue = duties.filter((duty) => duty.status === 'pending' && (duty.scheduledEnd === null || duty.scheduledEnd <= now));
   const today = duties.filter((duty) => duty.occurrenceDate === todayKey && !overdue.some((item) => item.id === duty.id));
   const next = duties.find((duty) => duty.status === 'pending' && duty.scheduledStart > now && duty.scheduledEnd !== null) ?? null;
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await syncAndRefresh();
+    } catch {
+      toast.error('Cloud sync could not complete. Local schedule is up to date.', 'Sync Incomplete');
+    }
+  }, [syncAndRefresh, toast]);
 
   async function confirmAttendance(duty: ScheduledDuty, status: AttendanceStatus) {
     const isCompleted = status === 'completed';
@@ -73,7 +81,7 @@ export default function TodayScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-    <Screen scroll contentStyle={styles.screen}>
+    <Screen scroll onRefresh={handleRefresh} contentStyle={styles.screen}>
       <View style={styles.topBar}>
         <View style={styles.brandLockup}>
           <BrandMark size={34} />

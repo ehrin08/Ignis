@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Href, router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { DutyRow } from '@/src/components/duty-row';
@@ -10,11 +10,13 @@ import { allocateDutyGross, calculatePay } from '@/src/domain/pay';
 import { getPayPeriod, isInPeriod } from '@/src/domain/periods';
 import { useLiveNow } from '@/src/hooks/use-live-now';
 import { useAppData } from '@/src/providers/app-provider';
+import { useToast } from '@/src/providers/feedback-provider';
 import { radii, spacing, useIgnisTheme } from '@/src/theme/tokens';
 
 export default function ScheduleScreen() {
   const theme = useIgnisTheme();
-  const { duties, ensureWindow, error, refresh, settings } = useAppData();
+  const { duties, ensureWindow, error, refresh, settings, syncAndRefresh } = useAppData();
+  const toast = useToast();
   const now = useLiveNow(true, 60_000);
   const [offset, setOffset] = useState(0);
   const period = useMemo(() => getPayPeriod(new Date(now), settings, offset), [now, offset, settings]);
@@ -22,6 +24,15 @@ export default function ScheduleScreen() {
   useEffect(() => {
     ensureWindow(period.start, period.end).catch(() => undefined);
   }, [ensureWindow, period.end, period.start]);
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await syncAndRefresh();
+      await ensureWindow(period.start, period.end);
+    } catch {
+      toast.error('Cloud sync could not complete. Local schedule is up to date.', 'Sync Incomplete');
+    }
+  }, [ensureWindow, period.end, period.start, syncAndRefresh, toast]);
 
   const periodDuties = duties.filter((duty) => isInPeriod(duty.scheduledStart, period));
   const completed = periodDuties.filter((duty) => duty.status === 'completed');
@@ -34,7 +45,7 @@ export default function ScheduleScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <Screen scroll contentStyle={styles.screen}>
+      <Screen scroll onRefresh={handleRefresh} contentStyle={styles.screen}>
         <View style={styles.topBar}>
           <View>
             <AppText variant="title" style={styles.heading}>Schedule</AppText>
