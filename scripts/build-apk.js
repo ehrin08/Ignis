@@ -21,15 +21,17 @@ function createArtifactFilename(build) {
 }
 
 function runEasBuild() {
-  const executable = process.platform === 'win32' ? 'eas.cmd' : 'eas';
+  const executable = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  const args = ['--yes', 'eas-cli', 'build', '--platform', 'android', '--profile', 'production', '--wait', '--json'];
   return new Promise((resolve, reject) => {
-    const child = spawn(executable, ['build', '--platform', 'android', '--profile', 'production', '--wait', '--json'], {
+    const child = spawn(executable, args, {
       cwd: path.resolve(__dirname, '..'),
       stdio: ['inherit', 'pipe', 'inherit'],
+      shell: process.platform === 'win32',
     });
     let stdout = '';
     child.stdout.on('data', (chunk) => { stdout += chunk; });
-    child.on('error', (error) => reject(new Error(`Could not start EAS CLI. Install it globally and sign in first. ${error.message}`)));
+    child.on('error', (error) => reject(new Error(`Could not start EAS CLI. ${error.message}`)));
     child.on('close', (code) => code === 0 ? resolve(stdout) : reject(new Error(`EAS build exited with code ${code}.`)));
   });
 }
