@@ -2,6 +2,8 @@
 
 Ignis remains fully usable without Supabase. These steps enable optional Google accounts and multi-device sync using Supabase's free plan.
 
+Budget is stored on this device and is not included in account backup. Only schedule/pay configuration uses the account snapshot. Budget entries and categories never enter sync payloads or trigger sync. Signing in, changing accounts, signing out, and deleting an account preserve local budget records. Uninstalling or clearing app storage removes them; there is no cloud budget restore in this version.
+
 ## 1. Create and migrate the project
 
 1. Create a Supabase Free project.
@@ -42,5 +44,6 @@ Add the same variables to the production and preview environments in Vercel and 
 4. Make conflicting edits and deletions, then bring both clients to the foreground and confirm the newest record or tombstone wins.
 5. Sign out and confirm the local synced cache is removed while signing back in restores the cloud copy.
 6. Delete the account and confirm the Supabase Auth user and `ignis_records` rows are removed.
+7. Create local budget funds and an expense before these checks. Confirm their amounts, categories, and balance survive successful sync, failed sync, account switching, sign-out, and account deletion, and do not appear on the second device.
 
 Free projects can pause after inactivity. During a pause, Ignis continues saving locally and reports that sync needs attention until the project is available again.

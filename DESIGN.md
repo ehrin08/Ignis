@@ -270,7 +270,13 @@ The system uses gently curved 8, 12, and 16 dp corners. Twelve dp is the default
 
 ### Navigation
 
-The compact-phone navigation bar has three Expo Router destinations—Today, Schedule, and Settings—on a 72 dp background-toned bar with a top outline. Material icons pair with uppercase 11 sp labels; ink and muted ink distinguish active and inactive states without capsules. The custom tab target provides haptic feedback, and editor screens preserve system Back with an unsaved-change confirmation.
+The compact-phone navigation bar has four Expo Router destinations—Today, Schedule, Budget, and Settings—on a 72 dp background-toned bar with a top outline. Material icons pair with uppercase 11 sp labels; ink and muted ink distinguish active and inactive states without capsules. The custom tab target provides haptic feedback, and editor screens preserve system Back with an unsaved-change confirmation.
+
+### Budget Ledger
+
+Budget uses a flat Ledger Paper balance panel, a Doto available-balance total, paired funds/expense totals, explicit Add funds and Add expense buttons, and outlined transaction rows ordered newest first. A negative balance has a visible Shortfall label in the danger role. Rows name funds or expense, date, category where relevant, signed amount, and optional description; icons and labels carry meaning alongside color. No salary totals or decorative charts appear here.
+
+Budget entry and category editors reuse Form Field, Action Button, 48 dp category choices, and native Android date pickers. Choices and paired controls wrap on small screens. Empty, loading, save failure, archived-category, and unsaved-change states are explicit. The device-only backup notice appears in Budget and Account & sync.
 
 ## Do's and Don'ts
 

@@ -197,4 +197,35 @@ export async function migrateDatabase(db: SQLiteDatabase) {
       `);
     });
   }
+
+  if (version < 7) {
+    await runWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        CREATE TABLE IF NOT EXISTS budget_categories (
+          id TEXT PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL COLLATE NOCASE UNIQUE CHECK (length(trim(name)) BETWEEN 1 AND 40),
+          archived INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0, 1)),
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS budget_entries (
+          id TEXT PRIMARY KEY NOT NULL,
+          kind TEXT NOT NULL CHECK (kind IN ('funds', 'expense')),
+          amount_minor INTEGER NOT NULL CHECK (typeof(amount_minor) = 'integer' AND amount_minor BETWEEN 1 AND 9007199254740991),
+          entry_date TEXT NOT NULL,
+          description TEXT NOT NULL DEFAULT '' CHECK (length(description) <= 500),
+          category_id TEXT REFERENCES budget_categories(id) ON DELETE RESTRICT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          CHECK ((kind = 'funds' AND category_id IS NULL) OR (kind = 'expense' AND category_id IS NOT NULL))
+        );
+        CREATE INDEX IF NOT EXISTS budget_entries_date ON budget_entries (entry_date DESC, created_at DESC, id DESC);
+        INSERT OR IGNORE INTO budget_categories (id, name, created_at, updated_at) VALUES
+          ('food', 'Food', 0, 0), ('transport', 'Transport', 0, 0), ('bills', 'Bills', 0, 0),
+          ('shopping', 'Shopping', 0, 0), ('health', 'Health', 0, 0),
+          ('entertainment', 'Entertainment', 0, 0), ('other', 'Other', 0, 0);
+        PRAGMA user_version = 7;
+      `);
+    });
+  }
 }

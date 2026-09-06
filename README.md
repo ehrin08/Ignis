@@ -31,7 +31,11 @@ The web app is deployed from `master` through Vercel. Vercel runs `npx expo expo
 
 Ignis works without an account and always saves to SQLite first. Builds configured with Supabase offer optional Google sign-in, automatic foreground sync, manual retry, and multi-device merging. See [SUPABASE.md](./SUPABASE.md) for the free-project, OAuth, environment, migration, and account-deletion setup.
 
+Budget is stored on this device and is not included in account backup. Account sign-out and deletion keep the local budget; clearing app storage or uninstalling removes it.
+
 ## Quality checks
+
+Use Node.js 22.13 or newer (Node.js 24 recommended) for the real SQLite persistence tests, which use the built-in `node:sqlite` module. The app itself retains the Expo SDK runtime requirements above.
 
 ```bash
 npm run typecheck
@@ -47,7 +51,10 @@ npm test -- --runInBand
 - Weekly, biweekly, semi-monthly, and monthly pay periods
 - Daily or weekly overtime estimates
 - Future-schedule projection with overdue attendance review
+- Separate manual PHP budget with a running balance, funds and expense entries, and editable/archivable expense categories
 - 100% offline SQLite storage with versioned migrations
 - System-controlled light and dark themes
 
 All salary values are estimates of gross pay before taxes, benefits, bonuses, premiums, or deductions. See [PRODUCT.md](./PRODUCT.md) for the full product contract and [DESIGN.md](./DESIGN.md) for the visual system once the finish review is complete.
+
+To use Budget, open the Budget tab, add your available funds, then record expenses. Balance carries forward and may show a shortfall. Tap an entry to correct or delete it. Manage categories to add, rename, archive, or restore a spending category. All amounts are PHP and independent of salary settings.

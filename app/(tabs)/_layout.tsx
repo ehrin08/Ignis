@@ -17,6 +17,7 @@ export default function TabLayout() {
     }}>
       <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: ({ color, size }) => <MaterialIcons color={color} name="schedule" size={size} /> }} />
       <Tabs.Screen name="schedule" options={{ title: 'Schedule', tabBarIcon: ({ color, size }) => <MaterialIcons color={color} name="event-note" size={size} /> }} />
+      <Tabs.Screen name="budget" options={{ title: 'Budget', tabBarIcon: ({ color, size }) => <MaterialIcons color={color} name="account-balance-wallet" size={size} /> }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color, size }) => <MaterialIcons color={color} name="tune" size={size} /> }} />
     </Tabs>
   );

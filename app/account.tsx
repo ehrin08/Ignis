@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ActionButton, AppText, Screen } from '@/src/components/primitives';
+import { BUDGET_BACKUP_NOTICE } from '@/src/domain/budget';
 import { useAppData } from '@/src/providers/app-provider';
 import { useDialog, useToast } from '@/src/providers/feedback-provider';
 import { radii, spacing, useIgnisTheme } from '@/src/theme/tokens';
@@ -102,7 +103,8 @@ export default function AccountScreen() {
     <Screen scroll contentStyle={styles.screen}>
       <View style={styles.heading}>
         <AppText variant="title" style={styles.title}>Account & sync</AppText>
-        <AppText variant="muted">Ignis always saves locally first. A Google account adds backup and multi-device sync.</AppText>
+        <AppText variant="muted">Ignis always saves locally first. A Google account adds schedule backup and multi-device sync.</AppText>
+        <AppText variant="muted">{BUDGET_BACKUP_NOTICE}. Signing out or deleting your account keeps this device’s budget.</AppText>
       </View>
 
       {!cloudConfigured ? (

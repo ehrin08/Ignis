@@ -43,6 +43,17 @@ Ignis is a schedule-first attendance ledger: the rota, attendance decision, over
 - English UI with device-locale date, time, and monetary formatting.
 - Android phones are the V1 acceptance target; tablets and iOS are not.
 
+## Personal Budget Extension
+
+- A separate Budget tab tracks one running balance in PHP, starting at zero with no monthly reset.
+- Funds and actual expenses are entered manually with a positive amount, today or a past date, and an optional description. Expenses have an editable category.
+- Available balance is funds added minus expenses. Overspending is allowed and explicitly labeled Shortfall.
+- Entries can be edited or deleted with deletion confirmation; totals update after a successful local save.
+- Food, Transport, Bills, Shopping, Health, Entertainment, and Other are initial categories. Categories can be added, renamed, archived, and restored. Renaming applies to historical labels; archiving preserves history and excludes the category from new expenses.
+- Budget currency and funds are independent of salary settings, attendance, and pay estimates. There are no automatic transfers, recurring expenses, multiple wallets, or category limits.
+- Budget is stored on this device and is not included in account backup. Signing in, signing out, switching accounts, or deleting an account preserves this device's budget. Uninstalling or clearing app storage removes local budget data.
+- Amounts use integer centavos; decimal input accepts at most two decimal places. Invalid, future-dated, or numerically unsafe entries cannot be saved.
+
 ## Brand Commitments
 
 - Product name: Ignis.

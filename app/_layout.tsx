@@ -13,6 +13,7 @@ import 'react-native-reanimated';
 import { ActionButton, AppText } from '@/src/components/primitives';
 import { migrateDatabase } from '@/src/data/migrations';
 import { AppDataProvider } from '@/src/providers/app-provider';
+import { BudgetProvider } from '@/src/providers/budget-provider';
 import { FeedbackProvider } from '@/src/providers/feedback-provider';
 import { useIgnisTheme } from '@/src/theme/tokens';
 import { clearWebOpfsStorage, getDatabaseErrorInfo } from '@/src/utils/web-storage';
@@ -146,15 +147,20 @@ export default function RootLayout() {
             },
           }}
         >
-          <Stack screenOptions={{ headerBackTitle: 'Back' }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="account" options={{ title: 'Account & sync', presentation: 'card' }} />
-            <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
-            <Stack.Screen name="schedule/[id]" options={{ title: 'Schedule entry', presentation: 'card' }} />
-          </Stack>
-          <StatusBar style="auto" />
+          <BudgetProvider>
+            <Stack screenOptions={{ headerBackTitle: 'Back' }}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="account" options={{ title: 'Account & sync', presentation: 'card' }} />
+              <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+              <Stack.Screen name="schedule/[id]" options={{ title: 'Schedule entry', presentation: 'card' }} />
+              <Stack.Screen name="budget/entry/[id]" options={{ title: 'Budget entry', presentation: 'card' }} />
+              <Stack.Screen name="budget/categories" options={{ title: 'Expense categories', presentation: 'card' }} />
+              <Stack.Screen name="budget/category/[id]" options={{ title: 'Category', presentation: 'card' }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </BudgetProvider>
         </ThemeProvider>
       </FeedbackProvider>
     </AppDataProvider>
