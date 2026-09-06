@@ -1,6 +1,6 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation, usePreventRemove } from '@react-navigation/native';
+import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';

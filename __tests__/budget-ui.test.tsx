@@ -1,6 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { usePreventRemove } from '@react-navigation/native';
+import { usePreventRemove } from "expo-router/react-navigation";
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
@@ -16,7 +16,7 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => 'new-id') }));
 jest.mock('@react-native-community/datetimepicker', () => jest.fn(() => null));
 jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() } }));
 const mockDispatch = jest.fn();
-jest.mock('@react-navigation/native', () => ({ useNavigation: () => ({ dispatch: mockDispatch }), usePreventRemove: jest.fn() }));
+jest.mock('expo-router/react-navigation', () => ({ useNavigation: () => ({ dispatch: mockDispatch }), usePreventRemove: jest.fn() }));
 const mockConfirm = jest.fn();
 jest.mock('@/src/providers/feedback-provider', () => ({ useConfirm: () => mockConfirm, useToast: () => ({ success: jest.fn() }) }));
 
