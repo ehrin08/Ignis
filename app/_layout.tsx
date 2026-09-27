@@ -1,6 +1,6 @@
 import { Doto_700Bold } from '@expo-google-fonts/doto/700Bold';
 import { Doto_800ExtraBold } from '@expo-google-fonts/doto/800ExtraBold';
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as Notifications from 'expo-notifications';

@@ -1,4 +1,4 @@
-import { useNavigation, usePreventRemove } from "@react-navigation/native";
+import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
 import { PropsWithChildren, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
