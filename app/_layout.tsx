@@ -3,6 +3,7 @@ import { Doto_800ExtraBold } from '@expo-google-fonts/doto/800ExtraBold';
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
@@ -20,18 +21,21 @@ import { useIgnisTheme } from '@/src/theme/tokens';
 import { clearWebOpfsStorage, getDatabaseErrorInfo } from '@/src/utils/web-storage';
 
 // Notification foreground handler — show alerts even when app is open
-try {
-  const Notifications = require('expo-notifications');
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
-} catch {
-  // Ignore in Expo Go where push notifications are unsupported in SDK 53+
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+if (!isExpoGo) {
+  try {
+    const Notifications = require('expo-notifications');
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  } catch {
+    // Ignore in Expo Go where push notifications are unsupported in SDK 53+
+  }
 }
 
 // Widget task handler (Android only, headless)

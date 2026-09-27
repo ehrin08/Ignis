@@ -1,7 +1,9 @@
 import { Platform } from 'react-native';
 import type * as ExpoNotifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 function getNotifications(): typeof ExpoNotifications | null {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return null;
   try {
     return require('expo-notifications');
   } catch {

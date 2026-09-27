@@ -8,7 +8,7 @@ export function requestWidgetRefresh(): void {
   if (Platform.OS !== 'android') return;
   try {
     const { requestWidgetUpdate } = require('react-native-android-widget');
-    requestWidgetUpdate({ widgetName: 'NextDutyWidget' });
+    requestWidgetUpdate({ widgetName: 'NextDutyWidget' }).catch(() => {});
   } catch {
     // Widget module unavailable (Expo Go or web) — silently skip
   }
