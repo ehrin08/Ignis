@@ -1,4 +1,3 @@
-import { AndroidImportance } from 'expo-notifications';
 
 export const CHANNEL_DUTY = 'duty-reminders';
 export const CHANNEL_ATTENDANCE = 'attendance-review';
@@ -8,7 +7,7 @@ export const NOTIFICATION_CHANNELS = [
   {
     id: CHANNEL_DUTY,
     name: 'Duty Reminders',
-    importance: AndroidImportance.HIGH,
+    importance: 5, // AndroidImportance.HIGH
     description: 'Alerts before your scheduled shifts',
     lightColor: '#D92C25',
     vibrationPattern: [0, 250, 250, 250],
@@ -16,13 +15,13 @@ export const NOTIFICATION_CHANNELS = [
   {
     id: CHANNEL_ATTENDANCE,
     name: 'Attendance Review',
-    importance: AndroidImportance.DEFAULT,
+    importance: 4, // AndroidImportance.DEFAULT
     description: 'Reminders to mark completed duties',
   },
   {
     id: CHANNEL_SUMMARY,
     name: 'Daily Summary',
-    importance: AndroidImportance.LOW,
+    importance: 3, // AndroidImportance.LOW
     description: 'Morning schedule overview',
   },
 ] as const;

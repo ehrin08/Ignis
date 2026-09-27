@@ -1,5 +1,13 @@
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import type * as ExpoNotifications from 'expo-notifications';
+
+function getNotifications(): typeof ExpoNotifications | null {
+  try {
+    return require('expo-notifications');
+  } catch {
+    return null;
+  }
+}
 
 import type { AppSettings, ScheduledDuty } from '@/src/types';
 import { NOTIFICATION_CHANNELS } from './channels';
@@ -8,6 +16,9 @@ import { computeAllNotifications } from './scheduler';
 /** Create Android notification channels (idempotent). */
 export async function ensureNotificationChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
+
   for (const channel of NOTIFICATION_CHANNELS) {
     await Notifications.setNotificationChannelAsync(channel.id, {
       name: channel.name,
@@ -21,6 +32,9 @@ export async function ensureNotificationChannels(): Promise<void> {
 
 /** Request POST_NOTIFICATIONS permission. Returns true if granted. */
 export async function requestNotificationPermission(): Promise<boolean> {
+  const Notifications = getNotifications();
+  if (!Notifications) return false;
+
   const response = await Notifications.getPermissionsAsync() as any;
   if (response.granted || response.status === 'granted') return true;
   const requested = await Notifications.requestPermissionsAsync() as any;
@@ -29,6 +43,9 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
 /** Check whether notification permission is currently granted. */
 export async function hasNotificationPermission(): Promise<boolean> {
+  const Notifications = getNotifications();
+  if (!Notifications) return false;
+
   const response = await Notifications.getPermissionsAsync() as any;
   return response.granted || response.status === 'granted';
 }
@@ -42,6 +59,9 @@ export async function rescheduleAllNotifications(
   settings: AppSettings,
 ): Promise<void> {
   if (Platform.OS === 'web') return;
+
+  const Notifications = getNotifications();
+  if (!Notifications) return;
 
   // Check permission without requesting — if denied, skip silently
   const granted = await hasNotificationPermission();
