@@ -4,6 +4,8 @@ import { RefreshControl, Text } from 'react-native';
 import { Screen } from '@/src/components/primitives';
 
 jest.mock('@expo/vector-icons', () => ({ MaterialIcons: () => null }));
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+jest.mock('react-native-worklets', () => ({}));
 
 describe('Screen primitive', () => {
   test('renders children in non-scroll mode', async () => {

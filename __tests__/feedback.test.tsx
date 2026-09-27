@@ -16,6 +16,46 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
   ImpactFeedbackStyle: { Light: 'light' },
 }));
+jest.mock('react-native-reanimated', () => {
+  const View = require('react-native').View;
+  const dummyAnim = {
+    duration: function() { return this; },
+    easing: function() { return this; },
+    delay: function() { return this; },
+    springify: function() { return this; },
+    damping: function() { return this; },
+  };
+  return {
+    __esModule: true,
+    default: {
+      View,
+      Text: require('react-native').Text,
+      ScrollView: require('react-native').ScrollView,
+      createAnimatedComponent: (v: any) => v,
+    },
+    Easing: {
+      out: () => ({}),
+      in: () => ({}),
+      inOut: () => ({}),
+      cubic: {},
+      ease: {},
+      linear: {},
+    },
+    FadeIn: dummyAnim,
+    FadeOut: dummyAnim,
+    ZoomInEasyDown: dummyAnim,
+    ZoomOutEasyUp: dummyAnim,
+    SlideInUp: dummyAnim,
+    SlideOutUp: dummyAnim,
+    useSharedValue: jest.fn(() => ({ value: 0 })),
+    useAnimatedStyle: jest.fn(() => ({})),
+    withTiming: jest.fn(),
+    interpolateColor: jest.fn(),
+    interpolate: jest.fn(),
+    useAnimatedRef: jest.fn(),
+    useScrollOffset: jest.fn(() => ({ value: 0 })),
+  };
+});
 
 function TestConsumer() {
   const toast = useToast();

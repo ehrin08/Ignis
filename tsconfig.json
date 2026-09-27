@@ -7,7 +7,7 @@
         "./*"
       ]
     },
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": [
     "**/*.ts",
