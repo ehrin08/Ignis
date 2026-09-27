@@ -2,6 +2,10 @@ import { Platform } from 'react-native';
 import type * as ExpoNotifications from 'expo-notifications';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
+import type { AppSettings, ScheduledDuty } from '@/src/types';
+import { NOTIFICATION_CHANNELS } from './channels';
+import { computeAllNotifications } from './scheduler';
+
 function getNotifications(): typeof ExpoNotifications | null {
   if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return null;
   try {
@@ -10,10 +14,6 @@ function getNotifications(): typeof ExpoNotifications | null {
     return null;
   }
 }
-
-import type { AppSettings, ScheduledDuty } from '@/src/types';
-import { NOTIFICATION_CHANNELS } from './channels';
-import { computeAllNotifications } from './scheduler';
 
 /** Create Android notification channels (idempotent). */
 export async function ensureNotificationChannels(): Promise<void> {
