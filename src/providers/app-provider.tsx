@@ -20,6 +20,9 @@ import { clearAccountData, syncAccount } from '@/src/data/sync';
 import { localDateKey } from '@/src/domain/format';
 import { getPayPeriod } from '@/src/domain/periods';
 import { nextMaterializationEnd } from '@/src/domain/schedule';
+import { rescheduleAllNotifications } from '@/src/notifications/service';
+import { writeWidgetSnapshot } from '@/src/widget/data-service';
+import { requestWidgetRefresh } from '@/src/widget/request-update';
 import { AppSettings, AttendanceStatus, ScheduledDuty, ScheduleEditScope, ScheduleInput, ScheduleSeries } from '@/src/types';
 
 export type SyncStatus = 'local-only' | 'idle' | 'syncing' | 'error';
@@ -75,6 +78,11 @@ function makeDefaults(): AppSettings {
     nightDifferentialStartMinutes: 22 * 60,
     nightDifferentialEndMinutes: 6 * 60,
     weekStartsOn: Math.max(0, Math.min(6, (calendar?.firstWeekday ?? 2) - 1)),
+    notifyUpcomingDuty: true,
+    notifyUpcomingLeadMinutes: 30,
+    notifyOverdueAttendance: true,
+    notifyDailySummary: true,
+    notifyDailySummaryHour: 7,
   };
 }
 
@@ -115,6 +123,10 @@ export function AppDataProvider({ children }: PropsWithChildren) {
       setSettings(effectiveSettings);
       setDuties(storedDuties);
       setSeries(storedSeries);
+
+      // Update widget + notifications after data load (fire-and-forget)
+      writeWidgetSnapshot(storedDuties, effectiveSettings).then(requestWidgetRefresh).catch(() => {});
+      rescheduleAllNotifications(storedDuties, effectiveSettings).catch(() => {});
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Ignis could not read its local schedule.');
     } finally {

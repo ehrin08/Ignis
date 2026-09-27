@@ -1,6 +1,6 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
+import { useNavigation, usePreventRemove } from "@react-navigation/native";
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -76,7 +76,7 @@ export default function ScheduleEntryScreen() {
   const [dirty, setDirty] = useState(false);
   const allowExit = useRef(false);
 
-  usePreventRemove(dirty, async ({ data }) => {
+  usePreventRemove(dirty, async ({ data }: any) => {
     if (allowExit.current) return navigation.dispatch(data.action);
     const confirmed = await confirm({
       title: 'Discard unsaved changes?',

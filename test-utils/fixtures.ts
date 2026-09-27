@@ -13,6 +13,11 @@ export const settings: AppSettings = {
   nightDifferentialStartMinutes: 22 * 60,
   nightDifferentialEndMinutes: 6 * 60,
   weekStartsOn: 1,
+  notifyUpcomingDuty: true,
+  notifyUpcomingLeadMinutes: 30,
+  notifyOverdueAttendance: true,
+  notifyDailySummary: true,
+  notifyDailySummaryHour: 7,
 };
 
 export function duty(start: string, end: string | null, overrides: Partial<ScheduledDuty> = {}): ScheduledDuty {

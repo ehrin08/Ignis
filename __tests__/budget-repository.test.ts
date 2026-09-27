@@ -30,12 +30,18 @@ describe('budget SQLite persistence and isolation', () => {
     const budget = await loadBudget(connection.db);
     expect(budget.entries).toEqual([]);
     expect(budget.categories.map((category) => category.name).sort()).toEqual([...DEFAULT_BUDGET_CATEGORIES].sort());
-    expect(connection.sqlite.prepare('PRAGMA user_version').get()).toMatchObject({ user_version: 7 });
+    expect(connection.sqlite.prepare('PRAGMA user_version').get()).toMatchObject({ user_version: 8 });
   });
 
   test('v6 upgrade preserves completed schedule history and pay configuration', async () => {
     connection.sqlite.exec(`
-      DROP TABLE budget_entries; DROP TABLE budget_categories; PRAGMA user_version = 6;
+      DROP TABLE budget_entries; DROP TABLE budget_categories;
+      ALTER TABLE settings DROP COLUMN notify_upcoming_duty;
+      ALTER TABLE settings DROP COLUMN notify_upcoming_lead_minutes;
+      ALTER TABLE settings DROP COLUMN notify_overdue_attendance;
+      ALTER TABLE settings DROP COLUMN notify_daily_summary;
+      ALTER TABLE settings DROP COLUMN notify_daily_summary_hour;
+      PRAGMA user_version = 6;
       INSERT INTO settings (id, currency_code, hourly_rate_minor, pay_cycle_anchor, updated_at) VALUES (1, 'USD', 777, '2020-01-01', 1);
       INSERT INTO scheduled_duties (id, occurrence_date, scheduled_start, scheduled_end, timezone, status, created_at, updated_at)
       VALUES ('history', '2020-01-01', 1, 2, 'UTC', 'completed', 1, 1);
@@ -44,7 +50,7 @@ describe('budget SQLite persistence and isolation', () => {
     const settings = connection.sqlite.prepare('SELECT * FROM settings').all();
     await migrateDatabase(connection.db);
     expect(connection.sqlite.prepare('SELECT * FROM scheduled_duties').all()).toEqual(before);
-    expect(connection.sqlite.prepare('SELECT * FROM settings').all()).toEqual(settings);
+    expect(connection.sqlite.prepare('SELECT * FROM settings').all()).toMatchObject(settings);
     expect((await loadBudget(connection.db)).entries).toEqual([]);
   });
 

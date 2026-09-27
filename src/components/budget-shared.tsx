@@ -1,4 +1,4 @@
-import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
+import { useNavigation, usePreventRemove } from "@react-navigation/native";
 import { PropsWithChildren, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -44,7 +44,7 @@ export function useBudgetExit(dirty: boolean, busy: boolean) {
   const navigation = useNavigation();
   const confirm = useConfirm();
   const allowExit = useRef(false);
-  usePreventRemove(dirty || busy, async ({ data }) => {
+  usePreventRemove(dirty || busy, async ({ data }: any) => {
     if (allowExit.current) return navigation.dispatch(data.action);
     if (busy) return;
     if (await confirm({ title: 'Discard unsaved changes?', message: 'Your budget edits have not been saved.', confirmText: 'Discard', cancelText: 'Keep editing', destructive: true })) {

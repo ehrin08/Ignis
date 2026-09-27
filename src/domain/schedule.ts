@@ -136,3 +136,32 @@ export function materializationEnd(series: Pick<ScheduleSeries, 'startDate' | 'e
     : null;
   return configuredEnd && configuredEnd < effectiveHorizon ? configuredEnd : effectiveHorizon;
 }
+
+/** Returns the next pending duty that starts after `now`, or null. */
+export function findNextUpcomingDuty(
+  duties: ScheduledDuty[],
+  now = new Date(),
+): ScheduledDuty | null {
+  const nowMs = now.getTime();
+  let best: ScheduledDuty | null = null;
+  for (const duty of duties) {
+    if (duty.status !== 'pending') continue;
+    if (duty.scheduledStart <= nowMs) continue;
+    if (!best || duty.scheduledStart < best.scheduledStart) best = duty;
+  }
+  return best;
+}
+
+/** Returns all pending duties whose scheduled end has passed (overdue for review). */
+export function findOverdueDuties(
+  duties: ScheduledDuty[],
+  now = new Date(),
+): ScheduledDuty[] {
+  const nowMs = now.getTime();
+  return duties.filter(
+    (duty) =>
+      duty.status === 'pending' &&
+      duty.scheduledEnd !== null &&
+      duty.scheduledEnd <= nowMs,
+  );
+}

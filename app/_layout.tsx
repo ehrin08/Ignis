@@ -1,8 +1,9 @@
 import { Doto_700Bold } from '@expo-google-fonts/doto/700Bold';
 import { Doto_800ExtraBold } from '@expo-google-fonts/doto/800ExtraBold';
-import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +18,28 @@ import { BudgetProvider } from '@/src/providers/budget-provider';
 import { FeedbackProvider } from '@/src/providers/feedback-provider';
 import { useIgnisTheme } from '@/src/theme/tokens';
 import { clearWebOpfsStorage, getDatabaseErrorInfo } from '@/src/utils/web-storage';
+
+// Notification foreground handler — show alerts even when app is open
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+// Widget task handler (Android only, headless)
+if (Platform.OS === 'android') {
+  try {
+    const { registerWidgetTaskHandler } = require('react-native-android-widget');
+    const { widgetTaskHandler } = require('@/src/widget/task-handler');
+    registerWidgetTaskHandler(widgetTaskHandler);
+  } catch {
+    // Native module unavailable — skip
+  }
+}
+
 
 SplashScreen.preventAutoHideAsync();
 

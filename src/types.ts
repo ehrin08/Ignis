@@ -22,6 +22,11 @@ export type AppSettings = {
   nightDifferentialStartMinutes: number;
   nightDifferentialEndMinutes: number;
   weekStartsOn: number;
+  notifyUpcomingDuty: boolean;
+  notifyUpcomingLeadMinutes: number;
+  notifyOverdueAttendance: boolean;
+  notifyDailySummary: boolean;
+  notifyDailySummaryHour: number;
 };
 
 export type ScheduleSeries = {

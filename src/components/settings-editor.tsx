@@ -1,8 +1,9 @@
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useEffect, useState } from 'react';
-import { LayoutChangeEvent, Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { LayoutChangeEvent, Platform, Pressable, StyleProp, StyleSheet, Switch, View, ViewStyle } from 'react-native';
 
 import { AppText, FormField, Section, Segment } from '@/src/components/primitives';
+import { requestNotificationPermission } from '@/src/notifications/service';
 import { spacing, useIgnisTheme } from '@/src/theme/tokens';
 import { AppSettings, OvertimeMode, PayCycleType } from '@/src/types';
 
@@ -19,8 +20,16 @@ const overtimeModes: { value: OvertimeMode; label: string }[] = [
   { value: 'weekly', label: 'Weekly' },
 ];
 
+const leadTimeOptions: { value: number; label: string }[] = [
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+  { value: 60, label: '1 hour' },
+];
+
 export function SettingsEditor({ value, onChange }: { value: AppSettings; onChange: (value: AppSettings) => void }) {
+  const theme = useIgnisTheme();
   const [nightPicker, setNightPicker] = useState<'start' | 'end' | null>(null);
+  const [summaryPicker, setSummaryPicker] = useState(false);
   const changeNightTime = (event: DateTimePickerEvent, selected?: Date) => {
     const active = nightPicker;
     setNightPicker(null);
@@ -31,6 +40,21 @@ export function SettingsEditor({ value, onChange }: { value: AppSettings; onChan
       [active === 'start' ? 'nightDifferentialStartMinutes' : 'nightDifferentialEndMinutes']: minutes,
     });
   };
+
+  const handleNotifyToggle = async (field: keyof AppSettings, enabled: boolean) => {
+    if (enabled && Platform.OS !== 'web') {
+      const granted = await requestNotificationPermission();
+      if (!granted) return;
+    }
+    onChange({ ...value, [field]: enabled });
+  };
+
+  const changeSummaryHour = (event: DateTimePickerEvent, selected?: Date) => {
+    setSummaryPicker(false);
+    if (event.type !== 'set' || !selected) return;
+    onChange({ ...value, notifyDailySummaryHour: selected.getHours() });
+  };
+
   return (
     <>
       <Section title="Pay profile">
@@ -93,7 +117,72 @@ export function SettingsEditor({ value, onChange }: { value: AppSettings; onChan
         </View>
         {nightPicker ? <DateTimePicker mode="time" onChange={changeNightTime} value={timeAtMinutes(nightPicker === 'start' ? value.nightDifferentialStartMinutes : value.nightDifferentialEndMinutes)} /> : null}
       </Section>
+
+      <Section title="Notifications">
+        <ToggleSetting
+          label="Duty reminders"
+          description={`Alert ${value.notifyUpcomingLeadMinutes} min before each shift`}
+          value={value.notifyUpcomingDuty}
+          onValueChange={(enabled) => handleNotifyToggle('notifyUpcomingDuty', enabled)}
+        />
+        {value.notifyUpcomingDuty ? (
+          <>
+            <AppText variant="label">Lead time</AppText>
+            <Segment
+              onChange={(notifyUpcomingLeadMinutes) => onChange({ ...value, notifyUpcomingLeadMinutes })}
+              options={leadTimeOptions}
+              value={value.notifyUpcomingLeadMinutes}
+            />
+          </>
+        ) : null}
+        <ToggleSetting
+          label="Attendance review"
+          description="Remind when a duty ends without a status"
+          value={value.notifyOverdueAttendance}
+          onValueChange={(enabled) => handleNotifyToggle('notifyOverdueAttendance', enabled)}
+        />
+        <ToggleSetting
+          label="Daily summary"
+          description={`Morning overview at ${formatTime(value.notifyDailySummaryHour * 60)}`}
+          value={value.notifyDailySummary}
+          onValueChange={(enabled) => handleNotifyToggle('notifyDailySummary', enabled)}
+        />
+        {value.notifyDailySummary ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setSummaryPicker(true)}
+            style={[styles.timeSetting, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outline }]}
+          >
+            <AppText variant="label">Summary time</AppText>
+            <AppText>{formatTime(value.notifyDailySummaryHour * 60)}</AppText>
+          </Pressable>
+        ) : null}
+        {summaryPicker ? <DateTimePicker mode="time" onChange={changeSummaryHour} value={timeAtMinutes(value.notifyDailySummaryHour * 60)} /> : null}
+      </Section>
     </>
+  );
+}
+
+function ToggleSetting({ label, description, value, onValueChange }: {
+  label: string;
+  description: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+}) {
+  const theme = useIgnisTheme();
+  return (
+    <View style={styles.toggleRow}>
+      <View style={styles.toggleCopy}>
+        <AppText>{label}</AppText>
+        <AppText variant="muted" style={styles.toggleDescription}>{description}</AppText>
+      </View>
+      <Switch
+        trackColor={{ false: theme.colors.outline, true: theme.colors.accent }}
+        thumbColor={theme.colors.surface}
+        onValueChange={onValueChange}
+        value={value}
+      />
+    </View>
   );
 }
 
@@ -162,6 +251,7 @@ export function validateSettings(value: AppSettings) {
   if (value.overtimeMultiplierBps < 10_000 || value.overtimeMultiplierBps > 20_000 || value.overtimeMultiplierBps % 500 !== 0) return 'Overtime premium must be between 0% and 100% in 5% steps.';
   if (value.nightDifferentialBps < 0 || value.nightDifferentialBps > 10_000 || value.nightDifferentialBps % 500 !== 0) return 'Night premium must be between 0% and 100% in 5% steps.';
   if (![value.nightDifferentialStartMinutes, value.nightDifferentialEndMinutes].every((minutes) => Number.isInteger(minutes) && minutes >= 0 && minutes < 1440)) return 'Choose valid night differential times.';
+  if (value.notifyDailySummaryHour < 0 || value.notifyDailySummaryHour > 23) return 'Daily summary hour must be between 0 and 23.';
   return null;
 }
 
@@ -173,4 +263,7 @@ const styles = StyleSheet.create({
   sliderFill: { height: 10, borderRadius: 5 },
   sliderThumb: { position: 'absolute', width: 24, height: 24, marginLeft: -12, borderRadius: 12 },
   timeSetting: { flex: 1, minHeight: 76, borderWidth: 1, borderRadius: 12, padding: spacing.md, justifyContent: 'center', gap: spacing.xs },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, minHeight: 48 },
+  toggleCopy: { flex: 1, gap: 2 },
+  toggleDescription: { fontSize: 12 },
 });

@@ -228,4 +228,18 @@ export async function migrateDatabase(db: SQLiteDatabase) {
       `);
     });
   }
+
+  if (version < 8) {
+    await runWriteTransaction(db, async (transaction) => {
+      await transaction.execAsync(`
+        ALTER TABLE settings ADD COLUMN notify_upcoming_duty INTEGER NOT NULL DEFAULT 1;
+        ALTER TABLE settings ADD COLUMN notify_upcoming_lead_minutes INTEGER NOT NULL DEFAULT 30;
+        ALTER TABLE settings ADD COLUMN notify_overdue_attendance INTEGER NOT NULL DEFAULT 1;
+        ALTER TABLE settings ADD COLUMN notify_daily_summary INTEGER NOT NULL DEFAULT 1;
+        ALTER TABLE settings ADD COLUMN notify_daily_summary_hour INTEGER NOT NULL DEFAULT 7;
+        PRAGMA user_version = 8;
+      `);
+    });
+  }
 }
+

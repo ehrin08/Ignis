@@ -19,6 +19,11 @@ type SettingsRow = {
   night_differential_start_minutes: number;
   night_differential_end_minutes: number;
   week_starts_on: number;
+  notify_upcoming_duty: number;
+  notify_upcoming_lead_minutes: number;
+  notify_overdue_attendance: number;
+  notify_daily_summary: number;
+  notify_daily_summary_hour: number;
 };
 
 type SeriesRow = {
@@ -108,6 +113,11 @@ export async function getSettings(db: SQLiteDatabase): Promise<AppSettings | nul
     nightDifferentialStartMinutes: row.night_differential_start_minutes,
     nightDifferentialEndMinutes: row.night_differential_end_minutes,
     weekStartsOn: row.week_starts_on,
+    notifyUpcomingDuty: Boolean(row.notify_upcoming_duty),
+    notifyUpcomingLeadMinutes: row.notify_upcoming_lead_minutes,
+    notifyOverdueAttendance: Boolean(row.notify_overdue_attendance),
+    notifyDailySummary: Boolean(row.notify_daily_summary),
+    notifyDailySummaryHour: row.notify_daily_summary_hour,
   };
 }
 
@@ -117,8 +127,10 @@ export async function saveSettings(db: SQLiteDatabase, settings: AppSettings) {
       id, onboarding_completed, currency_code, hourly_rate_minor, pay_cycle_type,
       pay_cycle_anchor, overtime_mode, overtime_threshold_minutes,
       overtime_multiplier_bps, night_differential_bps, night_differential_start_minutes,
-      night_differential_end_minutes, week_starts_on, updated_at
-    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      night_differential_end_minutes, week_starts_on,
+      notify_upcoming_duty, notify_upcoming_lead_minutes, notify_overdue_attendance,
+      notify_daily_summary, notify_daily_summary_hour, updated_at
+    ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       onboarding_completed = excluded.onboarding_completed,
       currency_code = excluded.currency_code,
@@ -132,6 +144,11 @@ export async function saveSettings(db: SQLiteDatabase, settings: AppSettings) {
       night_differential_start_minutes = excluded.night_differential_start_minutes,
       night_differential_end_minutes = excluded.night_differential_end_minutes,
       week_starts_on = excluded.week_starts_on,
+      notify_upcoming_duty = excluded.notify_upcoming_duty,
+      notify_upcoming_lead_minutes = excluded.notify_upcoming_lead_minutes,
+      notify_overdue_attendance = excluded.notify_overdue_attendance,
+      notify_daily_summary = excluded.notify_daily_summary,
+      notify_daily_summary_hour = excluded.notify_daily_summary_hour,
       updated_at = excluded.updated_at`,
     settings.onboardingCompleted ? 1 : 0,
     settings.currencyCode.toUpperCase(),
@@ -145,6 +162,11 @@ export async function saveSettings(db: SQLiteDatabase, settings: AppSettings) {
     settings.nightDifferentialStartMinutes,
     settings.nightDifferentialEndMinutes,
     settings.weekStartsOn,
+    settings.notifyUpcomingDuty ? 1 : 0,
+    settings.notifyUpcomingLeadMinutes,
+    settings.notifyOverdueAttendance ? 1 : 0,
+    settings.notifyDailySummary ? 1 : 0,
+    settings.notifyDailySummaryHour,
     Date.now(),
   );
 }

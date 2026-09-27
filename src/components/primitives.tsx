@@ -172,7 +172,7 @@ export function FormField({ label, error, containerStyle, style, ...props }: Tex
   );
 }
 
-export function Segment<T extends string>({ value, options, onChange }: {
+export function Segment<T extends string | number>({ value, options, onChange }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;

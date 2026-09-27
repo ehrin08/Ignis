@@ -129,6 +129,11 @@ describe('schedule repository contract', () => {
       profile.nightDifferentialStartMinutes,
       profile.nightDifferentialEndMinutes,
       profile.weekStartsOn,
+      profile.notifyUpcomingDuty ? 1 : 0,
+      profile.notifyUpcomingLeadMinutes,
+      profile.notifyOverdueAttendance ? 1 : 0,
+      profile.notifyDailySummary ? 1 : 0,
+      profile.notifyDailySummaryHour,
       expect.any(Number),
     ]);
     expect(runAsync.mock.calls[0][0]).not.toContain('workday_mask');
